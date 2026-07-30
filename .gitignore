@@ -1,0 +1,15 @@
+# Godot
+.godot/
+.import/
+export.cfg
+export_presets.cfg.local
+
+# Builds
+build/
+*.zip
+
+# Editor / OS
+.DS_Store
+*.swp
+.vscode/
+.idea/

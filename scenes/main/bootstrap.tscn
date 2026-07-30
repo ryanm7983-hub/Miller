@@ -1,0 +1,73 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/ui/bootstrap.gd" id="1_boot"]
+
+[node name="Bootstrap" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_boot")
+
+[node name="Background" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+color = Color(0.0156863, 0.0196078, 0.0235294, 1)
+
+[node name="Layout" type="VBoxContainer" parent="."]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -280.0
+offset_top = -110.0
+offset_right = 280.0
+offset_bottom = 110.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+theme_override_constants/separation = 16
+
+[node name="Title" type="Label" parent="Layout"]
+layout_mode = 2
+text = "THE BLACK PINE"
+horizontal_alignment = 1
+theme_override_font_sizes/font_size = 42
+theme_override_colors/font_color = Color(0.796078, 0.788235, 0.741176, 1)
+
+[node name="Subtitle" type="Label" parent="Layout"]
+layout_mode = 2
+text = "the basin remembers every sound it has ever heard"
+horizontal_alignment = 1
+theme_override_colors/font_color = Color(0.352941, 0.372549, 0.34902, 1)
+
+[node name="Spacer" type="Control" parent="Layout"]
+custom_minimum_size = Vector2(0, 40)
+layout_mode = 2
+
+[node name="Prompt" type="Label" parent="Layout"]
+layout_mode = 2
+text = "CLICK OR PRESS ANY KEY"
+horizontal_alignment = 1
+theme_override_colors/font_color = Color(0.541176, 0.529412, 0.470588, 1)
+
+[node name="Progress" type="ProgressBar" parent="Layout"]
+custom_minimum_size = Vector2(0, 6)
+layout_mode = 2
+max_value = 1.0
+step = 0.001
+show_percentage = false
+
+[node name="Status" type="Label" parent="Layout"]
+layout_mode = 2
+horizontal_alignment = 1
+theme_override_colors/font_color = Color(0.415686, 0.427451, 0.403922, 1)
