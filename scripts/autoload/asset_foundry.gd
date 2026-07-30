@@ -353,43 +353,60 @@ func _build_tree_meshes() -> void:
 		_pine_heights[v] = height
 		for lod in LOD_COUNT:
 			rng.seed = 4400 + v * 17  # same trunk lean across LODs
-			_meshes["pine_%d_%d" % [v, lod]] = MeshFactory.pine_tree(rng, lod, height)
+			var tree := MeshFactory.pine_tree(rng, lod, height)
+			# Surface 0 is bark, surface 1 is needles. Binding the materials to
+			# the mesh itself is what lets a MultiMeshInstance3D draw a whole
+			# forest of two-material trees in one node.
+			_bind_materials(tree, ["bark", "foliage"])
+			_meshes["pine_%d_%d" % [v, lod]] = tree
 	for v in 3:
 		rng.seed = 6600 + v * 23
-		_meshes["dead_tree_%d" % v] = MeshFactory.dead_tree(rng, 8.0 + v * 2.4)
+		_meshes["dead_tree_%d" % v] = _bind_materials(
+				MeshFactory.dead_tree(rng, 8.0 + v * 2.4), ["dead_bark"])
 	for v in BUSH_VARIANTS:
 		rng.seed = 7700 + v * 29
-		_meshes["bush_%d" % v] = MeshFactory.bush(rng, 0.7 + v * 0.22)
+		_meshes["bush_%d" % v] = _bind_materials(MeshFactory.bush(rng, 0.7 + v * 0.22), ["undergrowth"])
 		rng.seed = 7800 + v * 31
-		_meshes["fern_%d" % v] = MeshFactory.fern(rng, 0.5 + v * 0.14)
+		_meshes["fern_%d" % v] = _bind_materials(MeshFactory.fern(rng, 0.5 + v * 0.14), ["undergrowth"])
 	for v in 3:
 		rng.seed = 7900 + v * 37
-		_meshes["grass_%d" % v] = MeshFactory.grass_patch(rng, 6 + v * 3, 0.36 + v * 0.1)
+		_meshes["grass_%d" % v] = _bind_materials(
+				MeshFactory.grass_patch(rng, 6 + v * 3, 0.36 + v * 0.1), ["dry_grass"])
+
+
+## Attach materials to a mesh's surfaces by foundry key.
+func _bind_materials(target: ArrayMesh, keys: Array) -> ArrayMesh:
+	for i in mini(target.get_surface_count(), keys.size()):
+		var mat: Material = _materials.get(String(keys[i]))
+		if mat != null:
+			target.surface_set_material(i, mat)
+	return target
 
 
 func _build_prop_meshes() -> void:
 	var rng := RandomNumberGenerator.new()
 	for v in ROCK_VARIANTS:
 		rng.seed = 8800 + v * 41
-		_meshes["rock_%d" % v] = MeshFactory.rock(rng, 0.5 + v * 0.65, 1)
+		_meshes["rock_%d" % v] = _bind_materials(MeshFactory.rock(rng, 0.5 + v * 0.65, 1), ["stone"])
 		rng.seed = 8800 + v * 41
-		_meshes["rock_lod_%d" % v] = MeshFactory.rock(rng, 0.5 + v * 0.65, 0)
+		_meshes["rock_lod_%d" % v] = _bind_materials(MeshFactory.rock(rng, 0.5 + v * 0.65, 0), ["stone"])
 	for v in 3:
 		rng.seed = 9100 + v * 43
-		_meshes["log_%d" % v] = MeshFactory.log_prop(rng, 2.4 + v * 0.9, 0.22 + v * 0.06)
+		_meshes["log_%d" % v] = _bind_materials(
+				MeshFactory.log_prop(rng, 2.4 + v * 0.9, 0.22 + v * 0.06), ["dead_bark"])
 		rng.seed = 9200 + v * 47
-		_meshes["stump_%d" % v] = MeshFactory.stump(rng, 0.35 + v * 0.12)
+		_meshes["stump_%d" % v] = _bind_materials(MeshFactory.stump(rng, 0.35 + v * 0.12), ["dead_bark"])
 		rng.seed = 9300 + v * 53
-		_meshes["gravestone_%d" % v] = MeshFactory.gravestone(rng)
+		_meshes["gravestone_%d" % v] = _bind_materials(MeshFactory.gravestone(rng), ["marker"])
 
-	_meshes["crate"] = MeshFactory.crate(0.72)
-	_meshes["barrel"] = MeshFactory.barrel(0.34, 0.9)
-	_meshes["door"] = MeshFactory.plank_door()
-	_meshes["sign"] = MeshFactory.sign_post()
-	_meshes["fence"] = MeshFactory.fence_section()
-	_meshes["antenna"] = MeshFactory.antenna_mast(9.0)
-	_meshes["listening_post"] = MeshFactory.listening_post()
-	_meshes["fog_card"] = MeshFactory.billboard(9.0, 4.0)
+	_meshes["crate"] = _bind_materials(MeshFactory.crate(0.72), ["planks"])
+	_meshes["barrel"] = _bind_materials(MeshFactory.barrel(0.34, 0.9), ["rust"])
+	_meshes["door"] = _bind_materials(MeshFactory.plank_door(), ["planks"])
+	_meshes["sign"] = _bind_materials(MeshFactory.sign_post(), ["planks"])
+	_meshes["fence"] = _bind_materials(MeshFactory.fence_section(), ["rot_planks"])
+	_meshes["antenna"] = _bind_materials(MeshFactory.antenna_mast(9.0), ["metal"])
+	_meshes["listening_post"] = _bind_materials(MeshFactory.listening_post(), ["rust"])
+	_meshes["fog_card"] = _bind_materials(MeshFactory.billboard(9.0, 4.0), ["fog_card"])
 	_meshes["unit_plane"] = MeshFactory.plane(1.0, 1, 1.0)
 	_meshes["water_plane"] = MeshFactory.plane(1.0, 8, 1.0)
 

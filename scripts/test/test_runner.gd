@@ -73,6 +73,13 @@ func _run_case(path: String) -> void:
 		_failure_lines.append("%s :: could not load script" % path)
 		_failed += 1
 		return
+	if not script.can_instantiate():
+		# A parse error in the case script surfaces here; report it as a
+		# failure rather than crashing the whole run.
+		_failure_lines.append("%s :: script failed to compile" % path)
+		_failed += 1
+		_total += 1
+		return
 	var instance: TestCase = script.new()
 	if instance == null:
 		_failure_lines.append("%s :: not a TestCase" % path)
