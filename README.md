@@ -9,6 +9,27 @@ Android Chrome and iOS Safari from a single build.
 > started transmitting again last month. The basin records sound. It has been
 > recording for a very long time, and it has learned to play things back.
 
+## ▶ Play it
+
+A ready-to-serve build is committed at [`docs/play/`](docs/play/). GitHub Pages
+has to be switched on once — the workflow token is not permitted to do it — and
+then the game is live:
+
+* **Settings → Pages → Source: "Deploy from a branch"**, branch
+  `claude/black-pine-horror-game-kjajt2`, folder `/docs` →
+  `https://ryanm7983-hub.github.io/Miller/play/`
+* or **Source: "GitHub Actions"** and re-run the workflow, which builds from
+  source (running the test suite as a gate) and publishes to
+  `https://ryanm7983-hub.github.io/Miller/`
+
+Or run it locally in ten seconds:
+
+```bash
+cd docs/play && python3 -m http.server 8000   # then open http://localhost:8000
+```
+
+Headphones recommended. The game is mostly quiet on purpose.
+
 ---
 
 ## Running it
@@ -30,8 +51,14 @@ godot --headless --path . res://scenes/test/profile_assets.tscn
 godot --headless --path . --export-release "Web" build/web/index.html
 ```
 
-There is nothing to install beyond Godot. See [`docs/BUILD.md`](docs/BUILD.md)
-for export presets and hosting requirements.
+There is nothing to install beyond Godot — the project has no import pipeline
+to reproduce, because it has no assets to import. See
+[`docs/BUILD.md`](docs/BUILD.md) for export presets and hosting.
+
+```bash
+# Free-camera inspection of the world systems
+godot --path . res://scenes/test/world_preview.tscn
+```
 
 ---
 
@@ -102,7 +129,8 @@ Full detail: [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md).
 | [`docs/ASSET_LICENSES.md`](docs/ASSET_LICENSES.md) | Provenance and licence of every asset |
 | [`docs/BUILD.md`](docs/BUILD.md) | Export presets, hosting headers, browser matrix |
 | [`docs/STORY.md`](docs/STORY.md) | Premise, characters, lore, endings (spoilers) |
-| [`docs/systems/`](docs/systems/) | One document per major system |
+| [`docs/systems/WORLD.md`](docs/systems/WORLD.md) | Generation, streaming, time, weather |
+| [`docs/systems/AI.md`](docs/systems/AI.md) | Perception, the four archetypes, wildlife, horror direction |
 
 ---
 
