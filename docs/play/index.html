@@ -221,14 +221,20 @@
 
 	<script src="index.js"></script>
 	<script>
-const GODOT_CONFIG = {"args":[],"canvasResizePolicy":2,"emscriptenPoolSize":8,"ensureCrossOriginIsolationHeaders":false,"executable":"index","experimentalVK":false,"fileSizes":{"index.pck":437936,"index.wasm":37686550},"focusCanvas":true,"gdextensionLibs":[],"godotPoolSize":4};
+const GODOT_CONFIG = {"args":[],"canvasResizePolicy":2,"emscriptenPoolSize":8,"ensureCrossOriginIsolationHeaders":false,"executable":"index","experimentalVK":false,"fileSizes":{"index.pck":437952,"index.wasm":37686550},"focusCanvas":true,"gdextensionLibs":[],"godotPoolSize":4};
 const GODOT_THREADS_ENABLED = false;
-const engine = new Engine(GODOT_CONFIG);
 
 // Stamped by tools/stamp-build.sh after export. If it still reads as the raw
 // placeholder, this file was exported without going through that script.
-const BUILD_ID = '2026-08-01-7b5d493+';
+const BUILD_ID = '2026-08-01-87de35c';
 
+// `new Engine()` used to be constructed out here, above everything. When it
+// threw — which it does if the engine loader script did not load, and which is
+// what happens when someone opens this page from a file:// path — the whole
+// script below it never ran: no build stamp, no error handlers, no stall
+// detector. The page sat on its initial static text forever, which is the one
+// outcome all of this is supposed to make impossible. Nothing that can throw
+// belongs above the reporting it depends on.
 (function () {
 	const statusOverlay = document.getElementById('status');
 	const statusProgress = document.getElementById('status-progress');
@@ -340,12 +346,101 @@ const BUILD_ID = '2026-08-01-7b5d493+';
 		window.location.replace(url.toString());
 	});
 
+	// The game reports its own boot stages back out to the page, so a hang after
+	// the engine starts names the stage it hung on rather than showing a black
+	// rectangle.
+	window.blackPineStage = function (stage) {
+		const name = String(stage);
+		setPhase(name);
+		boot.waiting = name === 'title card';
+		if (name === 'menu') {
+			boot.finished = true;
+		}
+	};
+
+	// Android Chrome honours this once the page has a user gesture; iOS Safari
+	// rejects it, which is why the banner exists as well. Either way a refusal
+	// must not throw into the game's tap handler.
+	window.blackPineRequestLandscape = function () {
+		const rotate = document.getElementById('rotate');
+		if (rotate) {
+			rotate.classList.add('faded');
+		}
+		try {
+			if (screen.orientation && screen.orientation.lock) {
+				const locked = screen.orientation.lock('landscape');
+				if (locked && locked.catch) {
+					locked.catch(function () {});
+				}
+			}
+		} catch (e) { /* unsupported, and that is fine */ }
+	};
+
+	// Armed here, ahead of everything that can fail, so that no path through the
+	// rest of this function can leave the page reporting nothing. A stall is
+	// nothing changing, not time elapsing: a slow download is not a stall, and
+	// the title card waiting for a human is not one either.
+	setInterval(function () {
+		if (boot.finished || boot.waiting) {
+			boot.lastChange = Date.now();
+			return;
+		}
+		if ((Date.now() - boot.lastChange) / 1000 >= STALL_SECONDS) {
+			boot.finished = true;
+			showNotice('The game stopped while starting up, at "' + boot.phase + '".');
+		}
+	}, 4000);
+
+	try {
+		start();
+	} catch (err) {
+		displayFailureNotice(err);
+	}
+
+	function start() {
+	// Opened from disk rather than served. Browsers refuse `fetch` on a file://
+	// URL, and the engine fetches its own 37 MB runtime, so this can never work
+	// — but it fails silently, which is worse than failing loudly. Checked first
+	// because it is by far the most likely reason a copy of this build does
+	// nothing at all.
+	if (window.location.protocol === 'file:') {
+		boot.finished = true;
+		showNotice(
+			'This page was opened as a file on disk.\n\n'
+			+ 'Browsers block a page loaded from file:// from fetching its own data, '
+			+ 'and this game has to fetch a 37 MB engine, so it can never start this '
+			+ 'way. It needs to be served over http.\n\n'
+			+ 'From the folder containing this file:\n'
+			+ '    python3 -m http.server 8000\n'
+			+ 'then open http://localhost:8000\n\n'
+			+ 'Uploading the zip to itch.io does this for you.'
+		);
+		return;
+	}
+
+	// The engine loader is a separate script tag; if it did not arrive, saying so
+	// is far more use than a ReferenceError nobody will ever see.
+	if (typeof Engine === 'undefined') {
+		displayFailureNotice('The engine loader (index.js) did not load. The build '
+			+ 'may be incomplete — every file from the export has to sit next to '
+			+ 'index.html.');
+		return;
+	}
+
 	const missing = Engine.getMissingFeatures({ threads: GODOT_THREADS_ENABLED });
 	if (missing.length !== 0) {
 		displayFailureNotice(
 			'This browser is missing features the game needs:\n\n' + missing.join('\n')
 			+ '\n\nWebGL2 is required. On iOS, use Safari 15 or newer.'
 		);
+		return;
+	}
+
+	let engine;
+	try {
+		engine = new Engine(GODOT_CONFIG);
+	} catch (err) {
+		displayFailureNotice(err);
 		return;
 	}
 
@@ -378,51 +473,7 @@ const BUILD_ID = '2026-08-01-7b5d493+';
 			}
 		}, 700);
 	}, displayFailureNotice);
-
-	// The game reports its own boot stages back out to the page, so a hang after
-	// the engine starts names the stage it hung on rather than showing a black
-	// rectangle.
-	window.blackPineStage = function (stage) {
-		const name = String(stage);
-		setPhase(name);
-		boot.waiting = name === 'title card';
-		if (name === 'menu') {
-			boot.finished = true;
-		}
-	};
-
-	// Android Chrome honours this once the page has a user gesture; iOS Safari
-	// rejects it, which is why the banner exists as well. Either way a refusal
-	// must not throw into the game's tap handler.
-	window.blackPineRequestLandscape = function () {
-		const rotate = document.getElementById('rotate');
-		if (rotate) {
-			rotate.classList.add('faded');
-		}
-		try {
-			if (screen.orientation && screen.orientation.lock) {
-				const locked = screen.orientation.lock('landscape');
-				if (locked && locked.catch) {
-					locked.catch(function () {});
-				}
-			}
-		} catch (e) { /* unsupported, and that is fine */ }
-	};
-
-	// Runs from page load, not from engine start. The previous version armed
-	// only once the engine was already running, which meant the one failure that
-	// leaves nothing on screen — the engine never starting at all — was the one
-	// failure it could not report.
-	setInterval(function () {
-		if (boot.finished || boot.waiting) {
-			boot.lastChange = Date.now();
-			return;
-		}
-		if ((Date.now() - boot.lastChange) / 1000 >= STALL_SECONDS) {
-			boot.finished = true;
-			showNotice('The game stopped while starting up, at "' + boot.phase + '".');
-		}
-	}, 4000);
+	}
 
 	// Keep the canvas the size of the visual viewport. Mobile browsers change
 	// this when the address bar collapses, and Godot's own resize policy does
