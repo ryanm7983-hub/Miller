@@ -70,6 +70,29 @@ access token in the repository for the sake of one click. Two options:
    `https://<user>.github.io/<repo>/`. Nothing binary lives in git this way,
    so it is the better long-term arrangement.
 
+**itch.io.** The natural home for a browser game of this size. Run
+`tools/package-itch.sh` (or grab `build/the-black-pine-itch.zip`) and upload it
+as an HTML project. Two settings matter:
+
+| Field | Value |
+| --- | --- |
+| Kind of project | HTML |
+| This file will be | played in the browser |
+| Viewport | 1280 × 720 |
+| Fullscreen button | enabled |
+| Mobile friendly | enabled |
+
+itch.io serves the game from a sandboxed iframe and does **not** set
+`Cross-Origin-Opener-Policy` / `Cross-Origin-Embedder-Policy`. A threaded Godot
+build needs `SharedArrayBuffer` and therefore those headers, and would simply
+refuse to start there — which is the concrete payoff of exporting with thread
+support off. `package-itch.sh` asserts it rather than trusting it.
+
+**Higgsfield's game platform will not host this build.** Its assembly contract
+sets a 25 MiB per-asset bound; Godot's WebAssembly runtime is a single 35.9 MiB
+file, 1.44× over. The packaging is otherwise valid — that platform is built for
+canvas/JS games measured in kilobytes.
+
 Locally:
 
 ```bash
