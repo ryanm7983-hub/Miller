@@ -48,7 +48,15 @@ func _build_ui() -> void:
 	_fade = ColorRect.new()
 	_fade.color = Color(0.015, 0.018, 0.021, 1.0)
 	_fade.set_anchors_preset(Control.PRESET_FULL_RECT)
-	_fade.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	# The cover absorbs input rather than passing it through. A transition leaves
+	# the outgoing scene alive underneath for the length of two fades plus a
+	# scene instantiate, and a click landing there goes to a menu that is about
+	# to be replaced — where `change_scene` drops it, because a transition is
+	# already in flight. The button reads as broken. It is worst on a slow
+	# machine, where the tail is longest and a player is most likely to click
+	# again, which is precisely the wrong lesson to teach them. Only ever
+	# visible during a transition, so this blocks nothing else.
+	_fade.mouse_filter = Control.MOUSE_FILTER_STOP
 	_fade.modulate.a = 0.0
 	_fade.visible = false
 	add_child(_fade)

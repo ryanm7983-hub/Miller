@@ -1,30 +1,40 @@
 THE BLACK PINE
 ==============
 
-Do not open index.html by double-clicking it.
+TO PLAY, DOUBLE-CLICK:   play-windows.bat        (Windows)
+                         play-mac-linux.command  (macOS / Linux)
 
-It will show the title and then sit on the loading screen forever. That is not
-a bug in the game: browsers refuse to let a page opened from a file:// path
-fetch its own data, and this one has to fetch a 37 MB engine before it can
-start. The page will tell you so after a few seconds, but it still cannot run.
+Do NOT double-click index.html. It will show the title and then sit on the
+loading screen forever.
 
-It needs to be served over http. Any of these work:
+That is not a bug in the game. Browsers refuse to let a page opened from a
+file:// path fetch its own data, and this one has to fetch a 37 MB engine
+before it can start. Nothing can be done about that from inside the page --
+it has to be served over http instead of opened from disk. The page will tell
+you so after a few seconds if you try it.
 
-  1. Upload this zip to itch.io as an HTML project (index.html is already at
-     the root of the zip, which is what itch.io requires). Set:
-       Kind of project     HTML
-       This file will be   played in the browser
-       Viewport            1280 x 720
-       Fullscreen button   enabled
-       Mobile friendly     enabled
+play-windows.bat serves this folder and opens your browser. It needs nothing
+installed: it uses Windows PowerShell, which every Windows machine already has.
+Leave the black console window open while you play, and close it when you are
+done.
 
-  2. Double-click play-windows.bat, if you have Python or Node.js installed.
+If you would rather do it by hand, from a terminal in this folder:
 
-  3. From a terminal in this folder:
-       python3 -m http.server 8000
-     then open http://localhost:8000
+    python3 -m http.server 8000
+
+then open http://localhost:8000
+
+To put it online instead, upload this zip to itch.io as an HTML project --
+index.html is already at the root of the zip, which is what itch.io requires.
+Set: Kind of project = HTML, "This file will be played in the browser",
+viewport 1280 x 720, fullscreen button enabled, mobile friendly enabled.
+
+---
 
 Headphones recommended. The game is mostly quiet on purpose.
 
-On a phone, hold it sideways — the touch controls put a thumb in each bottom
-corner and portrait squeezes them into the play area. It is playable either way.
+On a phone, hold it sideways -- the touch controls put a thumb in each bottom
+corner, and portrait squeezes them into the play area. It works either way.
+
+First load takes a moment: the entire world, every texture and every sound is
+generated on your machine at startup rather than downloaded.

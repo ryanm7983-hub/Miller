@@ -33,10 +33,20 @@ cp "$ROOT"/build/web/index.html \
    "$ROOT"/build/web/index.apple-touch-icon.png \
    "$OUT/"
 
-# For whoever downloads the zip and does the natural thing with it. itch.io
-# ignores both files; a person opening the folder does not.
+# For whoever downloads the zip and does the natural thing with it — which is
+# to double-click index.html, which cannot work. itch.io ignores these; a person
+# who has just unzipped the folder does not.
 cp "$ROOT/tools/itch-readme.txt" "$OUT/READ-ME-FIRST.txt"
 cp "$ROOT/tools/play-windows.bat" "$OUT/play-windows.bat"
+cp "$ROOT/tools/serve-local.ps1" "$OUT/serve-local.ps1"
+cp "$ROOT/tools/play-mac-linux.command" "$OUT/play-mac-linux.command"
+chmod +x "$OUT/play-mac-linux.command"
+
+# CRLF, or Notepad shows the readme as one unbroken line and cmd.exe can
+# mis-parse a batch file with bare LF endings.
+for text in READ-ME-FIRST.txt play-windows.bat; do
+	sed -i 's/$/\r/' "$OUT/$text"
+done
 
 if ! grep -q 'GODOT_THREADS_ENABLED = false' "$OUT/index.html"; then
   echo "ERROR: this build wants threads, so it needs COOP/COEP headers that" >&2

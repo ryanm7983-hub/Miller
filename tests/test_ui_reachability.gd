@@ -270,6 +270,29 @@ func _assert_cluster_is_clean(view: Vector2, left_handed: bool, ui_scale: float)
 					% [where, i, j, gap, needed])
 
 
+## A scene transition covers the screen while the scene it is replacing is still
+## alive underneath it. Found by clicking "New game" three seconds after the
+## menu appeared, on a machine slow enough that the transition into the menu had
+## not finished: the click reached the menu, the menu asked the router to change
+## scene, and the router dropped the request because it was still mid-transition.
+## Nothing happened, twice, and the button looked dead. The cover has to absorb
+## input for as long as it is on screen.
+func test_scene_transitions_absorb_input() -> void:
+	var fade: ColorRect = null
+	for child in SceneRouter.get_children():
+		if child is ColorRect:
+			fade = child as ColorRect
+			break
+	assert_not_null(fade, "the scene router has no fade cover")
+	if fade == null:
+		return
+	assert_eq(fade.mouse_filter, Control.MOUSE_FILTER_STOP,
+			"the transition cover passes clicks to the scene it is replacing, "
+			+ "where the router will silently drop them")
+	assert_false(fade.visible,
+			"the transition cover is visible while idle, so it blocks everything")
+
+
 func test_touch_buttons_cover_the_actions_a_run_needs() -> void:
 	var required := ["interact", "sprint", "crouch", "flashlight", "jump",
 			"inventory", "journal", "pause"]

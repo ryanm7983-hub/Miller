@@ -5,6 +5,40 @@ not obvious, why.
 
 ---
 
+## Post-release — playing it locally, and a dead-looking button
+
+"I just want to play the game local as an HTML5" — a fair ask that the project
+had no answer to. Every route ran through something that had to be installed
+first, or through itch.io.
+
+**Added**
+
+- `serve-local.ps1`: a static file server in about a hundred lines of Windows
+  PowerShell, shipped inside the zip. PowerShell is on every Windows machine, so
+  double-clicking `play-windows.bat` now serves the folder and opens the browser
+  with nothing installed. `TcpListener` rather than `HttpListener` because the
+  latter goes through http.sys and can demand a URL reservation, which means an
+  admin prompt on some machines. It sets `application/wasm` correctly, so the
+  browser compiles the engine while it downloads, and refuses to serve outside
+  the folder. Verified by unpacking the real zip and playing the game through
+  it in a browser, phone and desktop viewports both.
+- `play-mac-linux.command` for the same job elsewhere.
+
+**Fixed**
+
+- **A menu button that changed scene did nothing if clicked while the previous
+  transition was still finishing.** The router's fade cover passed input
+  through, so the click reached a menu that was about to be replaced, and
+  `change_scene` dropped it because a transition was already in flight — with a
+  log line nobody sees and no feedback at all. Found by clicking "New game"
+  three seconds after the menu appeared on a machine slow enough for the
+  transition in to still be running; the same click fifteen seconds later
+  worked. The cover absorbs input now, which is what a loading screen should do.
+  It is worst on a slow device, where the tail is longest and a player is most
+  likely to click again.
+
+---
+
 ## Post-release — a build opened from disk, silently
 
 The report was "it stays on the loading screen for five minutes". The screenshot
