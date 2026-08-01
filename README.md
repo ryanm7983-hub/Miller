@@ -13,6 +13,11 @@ Android Chrome and iOS Safari from a single build.
 
 A ready-to-serve build is committed at [`docs/play/`](docs/play/).
 
+> **It has to be served over http.** Opening `index.html` from a file path shows
+> the title and then nothing: browsers refuse `fetch` on a `file://` URL, and the
+> engine has to fetch a 37 MB runtime before it can start. The page says so now,
+> but it still cannot run that way.
+
 **Locally, right now — no setup:**
 
 ```bash

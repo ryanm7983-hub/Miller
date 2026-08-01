@@ -33,6 +33,11 @@ cp "$ROOT"/build/web/index.html \
    "$ROOT"/build/web/index.apple-touch-icon.png \
    "$OUT/"
 
+# For whoever downloads the zip and does the natural thing with it. itch.io
+# ignores both files; a person opening the folder does not.
+cp "$ROOT/tools/itch-readme.txt" "$OUT/READ-ME-FIRST.txt"
+cp "$ROOT/tools/play-windows.bat" "$OUT/play-windows.bat"
+
 if ! grep -q 'GODOT_THREADS_ENABLED = false' "$OUT/index.html"; then
   echo "ERROR: this build wants threads, so it needs COOP/COEP headers that" >&2
   echo "       itch.io does not set. Turn thread support off in the Web preset." >&2

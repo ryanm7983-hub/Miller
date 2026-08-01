@@ -102,13 +102,25 @@ func test_html_shell_can_report_its_own_failures() -> void:
 	assert_true(shell.contains("__BUILD_ID__"),
 			"the shell has no build stamp placeholder for tools/stamp-build.sh")
 
+	# Everything that can fail has to sit *below* the machinery that reports a
+	# failure. This ordering has been wrong twice, and both times the symptom was
+	# a page that sat on its opening text forever with nothing in the UI to say
+	# why — the exact outcome the reporting exists to prevent.
+	var reporting := shell.find("setInterval(")
+	var construct := shell.find("engine = new Engine(")
 	var start := shell.find("engine.startGame(")
-	var handover := shell.find("}, displayFailureNotice);", start)
-	var stall := shell.find("setInterval(")
-	assert_true(start > 0 and handover > start, "the shell no longer starts the engine")
-	assert_true(stall > handover,
-			"the stall detector is armed inside the engine-start path, so it cannot "
+	assert_true(construct > 0 and start > construct, "the shell no longer starts the engine")
+	assert_true(reporting > 0 and reporting < construct,
+			"the stall detector is armed after the engine is constructed, so a "
+			+ "failure to construct it reports nothing")
+	assert_true(reporting < start,
+			"the stall detector is armed after the engine starts, so it cannot "
 			+ "report an engine that never starts")
+
+	# `fetch` is refused on a file:// URL, so a build opened from disk can never
+	# load — silently, unless the page says so.
+	assert_true(shell.contains("window.location.protocol === 'file:'"),
+			"the shell does not detect being opened from disk")
 
 
 func test_main_menu_buttons_are_reachable() -> void:

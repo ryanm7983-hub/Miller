@@ -5,6 +5,46 @@ not obvious, why.
 
 ---
 
+## Post-release — a build opened from disk, silently
+
+The report was "it stays on the loading screen for five minutes". The screenshot
+showed the address bar: `file:///C:/.../theblackpineitch.zip.14f/index.html`.
+The zip had been opened and `index.html` double-clicked, which is the natural
+thing to do with a downloaded folder and which can never work — browsers refuse
+`fetch` on a `file://` URL, and the engine has to fetch a 37 MB runtime.
+
+It should have said so. It said nothing, and the reason it said nothing is the
+more serious half of this entry.
+
+**Fixed**
+
+- **`new Engine(GODOT_CONFIG)` was constructed at the top of the script, above
+  everything.** When it threw, no statement below it ran: no build stamp, no
+  error handlers, no stall detector. The page sat on its opening static text
+  indefinitely — the exact outcome the previous entry's diagnostics were added
+  to make impossible, defeated by ordering. The engine is constructed inside a
+  `try` now, after the reporting is already live, and nothing that can throw
+  sits above the machinery that reports throwing.
+- The stall detector is armed before any of the startup checks rather than after
+  them, so no early return can skip it.
+
+**Added**
+
+- A `file://` check that runs first and explains the problem with the two
+  commands that solve it. It is by far the most likely reason a copy of this
+  build does nothing at all.
+- A check for the engine loader script having failed to arrive, which used to
+  surface only as a `ReferenceError` in a console nobody has open.
+- `READ-ME-FIRST.txt` and `play-windows.bat` in the itch zip: the first says not
+  to double-click `index.html` and why, the second serves the folder with
+  whatever Python or Node is already installed. itch.io ignores both files; a
+  person who has just unzipped it does not.
+- `tools/verify-web.js` grew a `file://` case, and `test_ui_reachability` now
+  asserts the ordering — the stall detector must appear in the shell before the
+  engine is constructed and before it is started.
+
+---
+
 ## Post-release — making a device failure diagnosable
 
 A second report from the same phone: "it stays on the loading screen." That

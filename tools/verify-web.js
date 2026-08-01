@@ -109,6 +109,31 @@ async function testBrokenBuildReportsItself(browser) {
 	await page.context().close();
 }
 
+// Opening index.html straight from a folder is the most natural thing to try
+// with a downloaded zip, and it can never work: `fetch` is refused on file://
+// and the engine fetches its own runtime. What matters is that the page says so
+// rather than sitting on the loading screen indefinitely.
+async function testOpenedFromDiskExplainsItself(browser, fileUrl) {
+	console.log('\nopened from disk (file://)');
+	const { page } = await newPage(browser, {});
+	await page.goto(fileUrl, { waitUntil: 'load', timeout: 120000 });
+	await page.waitForTimeout(3000);
+
+	const stamped = await page.evaluate(
+		() => (document.getElementById('build') || {}).textContent || '');
+	check(/build \d{4}-/.test(stamped),
+		'the build stamps itself even when the engine cannot be constructed');
+
+	const explained = await page.evaluate(() => {
+		const notice = document.getElementById('status-notice');
+		return notice !== null && notice.style.display === 'block'
+			&& notice.textContent.indexOf('file on disk') !== -1;
+	});
+	check(explained, 'the page explains that it has to be served over http');
+	await page.screenshot({ path: path.join(OUT, 'verify-file-url.png') });
+	await page.context().close();
+}
+
 (async () => {
 	if (!BASE) {
 		console.error('usage: node tools/verify-web.js <url> [outdir]');
@@ -120,6 +145,9 @@ async function testBrokenBuildReportsItself(browser) {
 	});
 	await testTouchStartsTheGame(browser);
 	await testBrokenBuildReportsItself(browser);
+	if (process.env.VERIFY_FILE_URL) {
+		await testOpenedFromDiskExplainsItself(browser, process.env.VERIFY_FILE_URL);
+	}
 	await browser.close();
 
 	console.log('\n' + (failures === 0 ? 'all checks passed' : failures + ' check(s) failed'));
