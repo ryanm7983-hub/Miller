@@ -76,6 +76,7 @@ jobs:
           mkdir -p build/web
           ~/godot/godot --headless --path . --export-release "Web" build/web/index.html
           test -s build/web/index.wasm
+          tools/stamp-build.sh build/web/index.html
 
       - name: Configure Pages
         uses: actions/configure-pages@v5

@@ -91,6 +91,26 @@ func test_html_shell_never_covers_the_canvas() -> void:
 			"#rotate covers the whole viewport")
 
 
+## A device that fails somewhere this machine cannot reproduce has to be able to
+## say so by itself. Two things make that possible and both are easy to lose in
+## an edit: the stall detector has to run from page load rather than from engine
+## start — the engine never starting is precisely the failure that leaves nothing
+## on screen — and the build has to identify itself, or a bug report cannot be
+## tied to a build.
+func test_html_shell_can_report_its_own_failures() -> void:
+	var shell := FileAccess.get_file_as_string("res://export/black_pine_shell.html")
+	assert_true(shell.contains("__BUILD_ID__"),
+			"the shell has no build stamp placeholder for tools/stamp-build.sh")
+
+	var start := shell.find("engine.startGame(")
+	var handover := shell.find("}, displayFailureNotice);", start)
+	var stall := shell.find("setInterval(")
+	assert_true(start > 0 and handover > start, "the shell no longer starts the engine")
+	assert_true(stall > handover,
+			"the stall detector is armed inside the engine-start path, so it cannot "
+			+ "report an engine that never starts")
+
+
 func test_main_menu_buttons_are_reachable() -> void:
 	# Force the lowest tier so the menu skips building its live 3D background;
 	# this test is about hit testing, not about generating a world.

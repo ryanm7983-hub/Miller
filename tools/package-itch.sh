@@ -20,6 +20,7 @@ rm -rf "$OUT" "$ZIP"
 mkdir -p "$OUT" "$ROOT/build/web"
 
 "$GODOT" --headless --path "$ROOT" --export-release "Web" "$ROOT/build/web/index.html"
+"$ROOT/tools/stamp-build.sh" "$ROOT/build/web/index.html"
 
 cp "$ROOT"/build/web/index.html \
    "$ROOT"/build/web/index.js \

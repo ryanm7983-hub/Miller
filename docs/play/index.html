@@ -102,6 +102,42 @@
 			padding: 0 1.5rem;
 		}
 
+		#detail {
+			font-size: 0.78rem;
+			letter-spacing: 0.1em;
+			color: var(--moss);
+			font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+			text-align: center;
+			padding: 0 1.5rem;
+			min-height: 1.1em;
+		}
+
+		#reload {
+			display: none;
+			appearance: none;
+			-webkit-appearance: none;
+			background: #16191c;
+			border: 1px solid #3a4038;
+			border-radius: 6px;
+			color: var(--bone);
+			font: inherit;
+			font-size: 0.95rem;
+			padding: 0.85rem 2.4rem;
+			cursor: pointer;
+		}
+
+		#build {
+			position: fixed;
+			bottom: 0.6rem;
+			left: 0;
+			right: 0;
+			text-align: center;
+			font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+			font-size: 0.62rem;
+			letter-spacing: 0.08em;
+			color: #33372f;
+		}
+
 		#status-notice {
 			background: #1a1113;
 			border: 1px solid #5b3239;
@@ -167,8 +203,15 @@
 		<div id="brand">THE BLACK PINE</div>
 		<div id="tagline">the basin remembers every sound it has ever heard</div>
 		<progress id="status-progress"></progress>
+		<!-- The loader and the game's own title card are deliberately similar, which
+		     made a bug report impossible to place: "stuck on the loading screen" fits
+		     both. This line only exists on the loader, and it always says what is
+		     happening right now. -->
+		<div id="detail">preparing</div>
 		<div id="hint">headphones recommended &middot; first load may take a moment</div>
 		<div id="status-notice"></div>
+		<button id="reload" type="button">Reload</button>
+		<div id="build"></div>
 	</div>
 
 	<div id="rotate">
@@ -182,32 +225,120 @@ const GODOT_CONFIG = {"args":[],"canvasResizePolicy":2,"emscriptenPoolSize":8,"e
 const GODOT_THREADS_ENABLED = false;
 const engine = new Engine(GODOT_CONFIG);
 
+// Stamped by tools/stamp-build.sh after export. If it still reads as the raw
+// placeholder, this file was exported without going through that script.
+const BUILD_ID = '2026-08-01-7b5d493+';
+
 (function () {
 	const statusOverlay = document.getElementById('status');
 	const statusProgress = document.getElementById('status-progress');
 	const statusNotice = document.getElementById('status-notice');
+	const statusDetail = document.getElementById('detail');
+	const reloadButton = document.getElementById('reload');
 	const hint = document.getElementById('hint');
+	document.getElementById('build').textContent = 'build ' + BUILD_ID;
 
-	let initializing = true;
+	// Everything worth knowing when this goes wrong on a device that is not
+	// here. There is no console on a phone, so the page has to be able to say
+	// what happened by itself.
+	const boot = {
+		phase: 'fetching the engine',
+		downloaded: 0,
+		expected: 0,
+		lastChange: Date.now(),
+		// Waiting for a human is not a stall. The title card sits here for as
+		// long as it takes someone to notice their phone.
+		waiting: false,
+		finished: false,
+		errors: [],
+	};
 
-	function showNotice(text) {
-		statusNotice.textContent = text;
+	// A stall is defined by nothing changing, not by elapsed time: a 38 MB
+	// download over a bad connection is slow but healthy, and accusing it of
+	// being stuck would be wrong more often than right.
+	const STALL_SECONDS = 45;
+
+	function mb(bytes) { return (bytes / 1048576).toFixed(1); }
+
+	function setPhase(phase) {
+		boot.phase = phase;
+		boot.lastChange = Date.now();
+		statusDetail.textContent = phase;
+	}
+
+	function note(err) {
+		let text = 'unknown';
+		if (err instanceof Error) {
+			text = err.message + (err.stack ? ' | ' + String(err.stack).split('\n')[1] : '');
+		} else if (err !== null && err !== undefined) {
+			text = String(err);
+		}
+		if (boot.errors.indexOf(text) === -1) {
+			boot.errors.push(text);
+		}
+		console.error(err);
+	}
+
+	// Captured rather than displayed: a single error during startup is not
+	// necessarily fatal, and blanking the screen over a recoverable one would
+	// turn a playable session into a broken-looking one. They are shown only
+	// alongside a failure or a stall, where they are the useful part.
+	window.addEventListener('error', function (event) {
+		note(event.error || event.message);
+	});
+	window.addEventListener('unhandledrejection', function (event) {
+		note(event.reason);
+	});
+
+	function diagnostics() {
+		const lines = [
+			'build       ' + BUILD_ID,
+			'phase       ' + boot.phase,
+			'downloaded  ' + mb(boot.downloaded)
+				+ (boot.expected > 0 ? ' / ' + mb(boot.expected) : '') + ' MB',
+			'threads     ' + GODOT_THREADS_ENABLED,
+			'screen      ' + window.innerWidth + 'x' + window.innerHeight
+				+ ' @' + (window.devicePixelRatio || 1),
+		];
+		if (navigator.deviceMemory) {
+			lines.push('memory      ' + navigator.deviceMemory + ' GB');
+		}
+		lines.push('agent       ' + navigator.userAgent);
+		if (boot.errors.length > 0) {
+			lines.push('', 'errors:');
+			boot.errors.slice(0, 4).forEach(function (e) { lines.push('  ' + e); });
+		}
+		return lines.join('\n');
+	}
+
+	function showNotice(headline) {
+		statusNotice.textContent = headline + '\n\n' + diagnostics();
 		statusNotice.style.display = 'block';
 		statusProgress.style.display = 'none';
+		statusDetail.style.display = 'none';
 		hint.style.display = 'none';
+		reloadButton.style.display = 'block';
+		// The overlay may already have faded out over a running game. A notice
+		// that renders into a hidden node is the same as no notice at all, which
+		// is the failure mode this whole path exists to prevent.
+		statusOverlay.style.display = 'flex';
+		statusOverlay.classList.remove('done');
 	}
 
 	function displayFailureNotice(err) {
-		console.error(err);
-		let message = 'An unknown error occurred.';
-		if (err instanceof Error) {
-			message = err.message;
-		} else if (typeof err === 'string') {
-			message = err;
-		}
-		showNotice(message);
-		initializing = false;
+		note(err);
+		boot.finished = true;
+		showNotice('The game could not start.');
 	}
+
+	reloadButton.addEventListener('click', function () {
+		// `reload(true)` is long gone, so bust the cache by hand: a half-written
+		// or stale 38 MB payload is exactly the kind of thing a plain reload
+		// hands straight back.
+		const url = new URL(window.location.href);
+		url.searchParams.set('reload', String(Date.now()));
+		window.location.replace(url.toString());
+	});
 
 	const missing = Engine.getMissingFeatures({ threads: GODOT_THREADS_ENABLED });
 	if (missing.length !== 0) {
@@ -218,44 +349,45 @@ const engine = new Engine(GODOT_CONFIG);
 		return;
 	}
 
+	setPhase('downloading');
 	engine.startGame({
 		'onProgress': function (current, total) {
+			boot.downloaded = current;
+			boot.expected = total;
+			boot.lastChange = Date.now();
 			if (current > 0 && total > 0) {
 				statusProgress.value = current;
 				statusProgress.max = total;
+				statusDetail.textContent = 'downloading  ' + mb(current) + ' / ' + mb(total) + ' MB';
 			} else {
 				statusProgress.removeAttribute('value');
 				statusProgress.removeAttribute('max');
+				statusDetail.textContent = 'downloading  ' + mb(current) + ' MB';
 			}
 		},
 	}).then(function () {
 		document.body.classList.add('playing');
+		setPhase('starting the engine');
 		statusOverlay.classList.add('done');
-		// Let the fade finish before removing the node, so the game's own title
-		// card is what the player sees underneath rather than a flash of canvas.
-		setTimeout(function () { statusOverlay.remove(); }, 700);
-		initializing = false;
-		armBootWatchdog();
+		// Hidden rather than removed once the fade finishes, so the game's own
+		// title card is what the player sees underneath — but the node survives
+		// in case something later needs to put a notice back on screen.
+		setTimeout(function () {
+			if (!boot.finished) {
+				statusOverlay.style.display = 'none';
+			}
+		}, 700);
 	}, displayFailureNotice);
 
-	// The game reports its boot stages back out to the page. On a phone there is
-	// no console to read, so if the title card never hands over to the menu the
-	// watchdog puts the last stage on screen instead of leaving a black rectangle
-	// with no explanation.
-	let lastStage = 'waiting for the first tap';
-	let handedOver = false;
-	let watchdog = 0;
-
+	// The game reports its own boot stages back out to the page, so a hang after
+	// the engine starts names the stage it hung on rather than showing a black
+	// rectangle.
 	window.blackPineStage = function (stage) {
-		lastStage = String(stage);
-		if (lastStage === 'menu') {
-			handedOver = true;
-			clearTimeout(watchdog);
-		}
-		// Nudging the deadline means a slow-but-progressing phone is never
-		// accused of being stuck.
-		if (!handedOver && watchdog) {
-			armBootWatchdog();
+		const name = String(stage);
+		setPhase(name);
+		boot.waiting = name === 'title card';
+		if (name === 'menu') {
+			boot.finished = true;
 		}
 	};
 
@@ -277,23 +409,20 @@ const engine = new Engine(GODOT_CONFIG);
 		} catch (e) { /* unsupported, and that is fine */ }
 	};
 
-	function armBootWatchdog() {
-		clearTimeout(watchdog);
-		watchdog = setTimeout(function () {
-			if (handedOver) {
-				return;
-			}
-			const notice = document.createElement('div');
-			notice.id = 'status-notice';
-			notice.style.cssText = 'position:fixed;left:1rem;right:1rem;bottom:1rem;'
-				+ 'z-index:30;display:block';
-			notice.textContent = 'The game stopped responding while starting up.\n\n'
-				+ 'Last stage: ' + lastStage + '\n\n'
-				+ 'Reload the page to try again. If it stops here every time, the '
-				+ 'device may not have enough memory for this build.';
-			document.body.appendChild(notice);
-		}, 60000);
-	}
+	// Runs from page load, not from engine start. The previous version armed
+	// only once the engine was already running, which meant the one failure that
+	// leaves nothing on screen — the engine never starting at all — was the one
+	// failure it could not report.
+	setInterval(function () {
+		if (boot.finished || boot.waiting) {
+			boot.lastChange = Date.now();
+			return;
+		}
+		if ((Date.now() - boot.lastChange) / 1000 >= STALL_SECONDS) {
+			boot.finished = true;
+			showNotice('The game stopped while starting up, at "' + boot.phase + '".');
+		}
+	}, 4000);
 
 	// Keep the canvas the size of the visual viewport. Mobile browsers change
 	// this when the address bar collapses, and Godot's own resize policy does

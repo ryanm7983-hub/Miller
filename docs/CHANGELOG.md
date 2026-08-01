@@ -5,6 +5,49 @@ not obvious, why.
 
 ---
 
+## Post-release — making a device failure diagnosable
+
+A second report from the same phone: "it stays on the loading screen." That
+could mean the browser's loader or the game's own title card — they look almost
+identical and have unrelated causes — and there was no way to tell which, or
+even whether the device was running the build with the previous fixes in it.
+That gap was the actual defect.
+
+**Fixed**
+
+- **The stall detector could not report the failure it most needed to.** It was
+  armed inside `engine.startGame().then()`, so an engine that never started —
+  the one failure that leaves nothing on screen — was the one case it never saw.
+  It now runs from page load, and defines a stall as nothing changing for 45
+  seconds rather than as elapsed time, so a slow download is not accused of
+  being stuck. It pauses while the title card waits for a human.
+- **A notice could render into a removed node.** The loading overlay was deleted
+  700 ms after the engine started; anything that needed to report a problem
+  afterwards wrote into a detached element. It is hidden now, not removed.
+
+**Added**
+
+- The loading screen prints its phase and byte progress live. This is also the
+  only thing that visually distinguishes it from the in-game title card.
+- Self-diagnostics on failure: build stamp, phase, bytes, screen size and pixel
+  ratio, device memory, user agent, and any JavaScript errors caught from
+  `window.onerror` / `unhandledrejection` — captured all along but shown only
+  next to a failure, since one recoverable error during startup should not blank
+  a working game.
+- A Reload button that cache-busts via a query parameter. `location.reload(true)`
+  has been ignored for years, and a stale or half-written 38 MB payload is
+  exactly what a plain reload hands back.
+- `tools/stamp-build.sh`, run by `package-itch.sh` and the Pages workflow, writes
+  the date and commit into the loading screen. Without it there is no way to tell
+  whether a device reporting a problem has the fix or a cached copy of the build
+  that lacked it.
+- `tools/verify-web.js`: the phone verification kept as a script rather than
+  improvised each time. Checks that a touch — in a session with no mouse at all —
+  starts the game and reaches the menu, that nothing covers the middle of the
+  canvas, and that a build whose engine cannot load says so instead of hanging.
+
+---
+
 ## Post-release — the game was unplayable on a phone
 
 Reported from a real device: the build loaded and the title card would not

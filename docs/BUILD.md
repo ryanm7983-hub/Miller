@@ -22,7 +22,14 @@ tests/run.sh                                                    # test suite, ex
 godot --headless --path . res://scenes/test/profile_assets.tscn # boot-cost profile
 godot --headless --path . res://scenes/test/world_preview.tscn  # free-camera world inspection
 godot --headless --path . --export-release "Web" build/web/index.html
+tools/stamp-build.sh build/web/index.html         # always, after any export
+node tools/verify-web.js http://localhost:8000     # drive it as a phone would
 ```
+
+`stamp-build.sh` writes the date and commit into the loading screen. Do not skip
+it: without a stamp there is no way to tell whether a device reporting a problem
+is running the build that contains the fix or a cached copy of the one that does
+not. `tools/package-itch.sh` and the Pages workflow both run it already.
 
 `tests/run.sh` honours a `GODOT` environment variable if the binary is not on
 `PATH`.
@@ -124,9 +131,36 @@ Four faults that made the game unstartable on a real phone were all invisible on
 a desktop, and three of them were invisible in a screenshot too. What surfaced
 them was driving the exported build in a viewport with `hasTouch: true`,
 `isMobile: true` and no mouse at all, then asserting on what
-`document.elementFromPoint` returns over the middle of the canvas. Any change to
-the HTML shell, the title card, the content scale or the touch layout should be
-re-checked that way rather than by resizing a desktop window.
+`document.elementFromPoint` returns over the middle of the canvas.
+`tools/verify-web.js` is that check, kept as a script. Any change to the HTML
+shell, the title card, the content scale or the touch layout should be
+re-checked with it rather than by resizing a desktop window.
+
+```bash
+cd build/web && python3 -m http.server 8000 &
+node tools/verify-web.js http://127.0.0.1:8000 /tmp/shots
+```
+
+### When it fails on a device you do not have
+
+The loading screen diagnoses itself. If nothing has changed for 45 seconds it
+stops waiting and prints the build stamp, the phase it stopped in, bytes
+downloaded, the screen size and pixel ratio, reported device memory, the user
+agent and any JavaScript errors it caught — plus a Reload button that
+cache-busts, because a half-written 38 MB payload is exactly what a plain reload
+hands straight back.
+
+A stall is defined by *nothing changing*, not by elapsed time. A slow download is
+not a stall, and the detector deliberately pauses while the title card waits for
+someone to tap. It runs from page load rather than from engine start:
+the engine never starting is the one failure that otherwise leaves nothing on
+screen at all, and it was reachable — the previous version armed this only
+*after* the engine was already running.
+
+The first line under the progress bar is also what distinguishes the browser's
+loading screen from the game's own title card. They look almost identical, which
+once made a bug report impossible to place: "stuck on the loading screen" fit
+both, and they have completely different causes.
 
 ### Two engine features that are not available on the web target
 
