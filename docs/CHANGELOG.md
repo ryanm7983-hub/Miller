@@ -5,6 +5,52 @@ not obvious, why.
 
 ---
 
+## Post-release — the game was unplayable on a phone
+
+Reported from a real device: the build loaded and the title card would not
+start. Four separate faults, all of which desktop testing was structurally
+incapable of finding.
+
+**Fixed**
+
+- **The orientation nudge swallowed every tap.** `#rotate` in the HTML shell was
+  an opaque `position: fixed; inset: 0` cover with no `pointer-events: none`,
+  shown as soon as `body.playing` was set — which happens when the engine
+  starts, *before* the tap-to-begin gate. On a portrait phone it sat over the
+  canvas and ate the only input the platform has. It is now a small
+  pointer-transparent banner at the bottom edge that fades on the first touch.
+  `test_html_shell_never_covers_the_canvas` reads the shell's CSS and fails if
+  either property comes back.
+- **The interface scaled to a third of its intended size in portrait.**
+  `canvas_items` stretch takes the smaller axis ratio against the 1280×720
+  reference canvas, so a 390 px-wide phone scaled everything by 390/1280.
+  `Platform.apply_content_scale()` now turns the reference canvas to match the
+  window on every resize, so the scale is governed by the short edge either way
+  up — 0.30 to 0.54 on a typical phone.
+- **Touch buttons overlapped each other.** The action cluster swept six buttons
+  along one arc at alternating radii; three pairs of hit circles intersected, so
+  a thumb aimed at CROUCH triggered USE with nothing on screen to explain why.
+  The cluster is now two explicit arcs, and the geometry lives in pure functions
+  that `test_touch_buttons_never_overlap_each_other` checks at five screen sizes,
+  both handedness settings and three UI scales.
+- **A stall during warm-up was indistinguishable from a hang.** The progress bar
+  only moved between the foundry's eight stages. It now drifts towards the next
+  stage continuously, the title card reports each stage out to the page via
+  `Platform.report_stage()`, and the shell puts the last stage on screen if the
+  game has not reached the menu after a minute.
+
+**Added**
+
+- A full-rect `StartButton` on the title card, so the start gesture also travels
+  the ordinary GUI hit-test path that `test_ui_reachability` verifies, not only
+  the raw `_input` path. The title card is the one screen where a missed input
+  leaves nothing on screen to suggest why.
+- `window.blackPineRequestLandscape()`: asks for landscape on the first
+  gesture. Android Chrome honours it; iOS Safari refuses, which is what the
+  banner is still for.
+
+---
+
 ## M5 + M6 — AI, wildlife, horror direction, landmarks and story
 
 **Added**

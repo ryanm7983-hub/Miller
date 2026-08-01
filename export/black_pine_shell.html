@@ -120,22 +120,34 @@
 
 		/* Landscape is strongly preferred on a phone: the touch controls put a
 		   thumb in each bottom corner and portrait squeezes them into the play
-		   area. This is a nudge, not a lock — the game is playable either way. */
+		   area. This is a nudge, not a lock — the game is playable either way,
+		   so the nudge must never sit between the player and the canvas.
+		   `pointer-events: none` is load-bearing: an earlier version of this
+		   overlay was a full-screen opaque cover, which on a portrait phone
+		   swallowed the tap that starts the game. */
 		#rotate {
 			position: fixed;
-			inset: 0;
+			left: 50%;
+			transform: translateX(-50%);
+			bottom: max(1rem, env(safe-area-inset-bottom));
 			display: none;
-			flex-direction: column;
-			justify-content: center;
 			align-items: center;
-			gap: 0.9rem;
-			background: var(--ink);
+			gap: 0.6rem;
+			background: rgba(6, 7, 10, 0.82);
+			border: 1px solid #23272b;
+			border-radius: 999px;
 			color: var(--bone-dim);
+			font-size: 0.78rem;
+			letter-spacing: 0.06em;
 			z-index: 20;
 			text-align: center;
-			padding: 2rem;
+			padding: 0.55rem 1.1rem;
+			max-width: calc(100vw - 2rem);
+			pointer-events: none;
+			transition: opacity 0.5s ease;
 		}
-		#rotate span { font-size: 2.4rem; }
+		#rotate span { font-size: 1.1rem; line-height: 1; }
+		#rotate.faded { opacity: 0; }
 
 		@media (orientation: portrait) and (max-width: 820px) {
 			body.playing #rotate { display: flex; }
@@ -159,7 +171,7 @@
 
 	<div id="rotate">
 		<span>&#8635;</span>
-		<div>Turn your device sideways.</div>
+		<div>Best played sideways</div>
 	</div>
 
 	<script src="$GODOT_URL"></script>
@@ -221,7 +233,65 @@ const engine = new Engine(GODOT_CONFIG);
 		// card is what the player sees underneath rather than a flash of canvas.
 		setTimeout(function () { statusOverlay.remove(); }, 700);
 		initializing = false;
+		armBootWatchdog();
 	}, displayFailureNotice);
+
+	// The game reports its boot stages back out to the page. On a phone there is
+	// no console to read, so if the title card never hands over to the menu the
+	// watchdog puts the last stage on screen instead of leaving a black rectangle
+	// with no explanation.
+	let lastStage = 'waiting for the first tap';
+	let handedOver = false;
+	let watchdog = 0;
+
+	window.blackPineStage = function (stage) {
+		lastStage = String(stage);
+		if (lastStage === 'menu') {
+			handedOver = true;
+			clearTimeout(watchdog);
+		}
+		// Nudging the deadline means a slow-but-progressing phone is never
+		// accused of being stuck.
+		if (!handedOver && watchdog) {
+			armBootWatchdog();
+		}
+	};
+
+	// Android Chrome honours this once the page has a user gesture; iOS Safari
+	// rejects it, which is why the banner exists as well. Either way a refusal
+	// must not throw into the game's tap handler.
+	window.blackPineRequestLandscape = function () {
+		const rotate = document.getElementById('rotate');
+		if (rotate) {
+			rotate.classList.add('faded');
+		}
+		try {
+			if (screen.orientation && screen.orientation.lock) {
+				const locked = screen.orientation.lock('landscape');
+				if (locked && locked.catch) {
+					locked.catch(function () {});
+				}
+			}
+		} catch (e) { /* unsupported, and that is fine */ }
+	};
+
+	function armBootWatchdog() {
+		clearTimeout(watchdog);
+		watchdog = setTimeout(function () {
+			if (handedOver) {
+				return;
+			}
+			const notice = document.createElement('div');
+			notice.id = 'status-notice';
+			notice.style.cssText = 'position:fixed;left:1rem;right:1rem;bottom:1rem;'
+				+ 'z-index:30;display:block';
+			notice.textContent = 'The game stopped responding while starting up.\n\n'
+				+ 'Last stage: ' + lastStage + '\n\n'
+				+ 'Reload the page to try again. If it stops here every time, the '
+				+ 'device may not have enough memory for this build.';
+			document.body.appendChild(notice);
+		}, 60000);
+	}
 
 	// Keep the canvas the size of the visual viewport. Mobile browsers change
 	// this when the address bar collapses, and Godot's own resize policy does

@@ -1,6 +1,8 @@
-[gd_scene load_steps=2 format=3]
+[gd_scene load_steps=3 format=3]
 
 [ext_resource type="Script" path="res://scripts/ui/bootstrap.gd" id="1_boot"]
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_start"]
 
 [node name="Bootstrap" type="Control"]
 layout_mode = 3
@@ -73,3 +75,17 @@ show_percentage = false
 layout_mode = 2
 horizontal_alignment = 1
 theme_override_colors/font_color = Color(0.415686, 0.427451, 0.403922, 1)
+
+[node name="StartButton" type="Button" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+focus_mode = 0
+theme_override_styles/normal = SubResource("StyleBoxEmpty_start")
+theme_override_styles/hover = SubResource("StyleBoxEmpty_start")
+theme_override_styles/pressed = SubResource("StyleBoxEmpty_start")
+theme_override_styles/focus = SubResource("StyleBoxEmpty_start")
+theme_override_styles/disabled = SubResource("StyleBoxEmpty_start")

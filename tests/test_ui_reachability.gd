@@ -33,12 +33,62 @@ func test_title_card_accepts_a_tap() -> void:
 	var root := scene.instantiate() as Control
 	tree.root.add_child(root)
 	await _settle(root)
-	# The bootstrap has no buttons; it listens for raw input, so what matters is
-	# that nothing in it claims mouse events.
+	# Nothing except the start button itself may claim a mouse event...
 	var blockers := _controls_claiming_mouse(root)
 	assert_true(blockers.is_empty(),
 			"the title card blocks input at: %s" % ", ".join(blockers))
+	# ...and the start button has to cover the card and be on top of it, because
+	# on a phone a tap is the only way in.
+	var button := root.get_node_or_null("StartButton") as Button
+	assert_not_null(button, "the title card has no StartButton")
+	if button != null:
+		assert_true(button.size.x >= SCREEN_SIZE.x and button.size.y >= SCREEN_SIZE.y,
+				"the start button does not cover the title card")
+		for point in [SCREEN_SIZE * 0.5, Vector2(8, 8), SCREEN_SIZE - Vector2(8, 8)]:
+			var hit := _control_at(root, point)
+			assert_true(hit == button, "a tap at %s lands on '%s' instead of the start button"
+					% [point, hit.name if hit != null else "nothing"])
 	root.free()
+
+
+## `canvas_items` stretch takes the smaller axis ratio against the reference
+## canvas, so a 1280×720 reference on a portrait phone scales the entire
+## interface by width/1280 — about a third of its intended size. The reference
+## has to turn with the window, or the game is technically playable in portrait
+## and practically not.
+func test_ui_scale_does_not_collapse_in_portrait() -> void:
+	var landscape := Platform.content_scale_for(Vector2i(844, 390))
+	var portrait := Platform.content_scale_for(Vector2i(390, 844))
+	assert_true(landscape.x > landscape.y, "the landscape reference canvas is not landscape")
+	assert_true(portrait.y > portrait.x, "the portrait reference canvas is not portrait")
+
+	# What matters is the resulting scale, and it should barely differ between a
+	# phone held one way and the same phone held the other.
+	var scale_landscape := minf(844.0 / landscape.x, 390.0 / landscape.y)
+	var scale_portrait := minf(390.0 / portrait.x, 844.0 / portrait.y)
+	assert_almost(scale_portrait, scale_landscape, 0.02,
+			"turning the phone changes the UI scale from %.2f to %.2f"
+			% [scale_landscape, scale_portrait])
+	assert_true(scale_portrait > 0.45,
+			"portrait UI scale is %.2f — controls would be too small to hit"
+			% scale_portrait)
+	assert_eq(Platform.content_scale_for(Vector2i(0, 0)), Vector2i.ZERO,
+			"a degenerate window size should be left alone")
+
+
+## The shell's orientation nudge is drawn over the canvas by the browser, where
+## Godot's hit testing cannot see it. It shipped once as an opaque full-screen
+## cover that appeared as soon as the engine started, which on a portrait phone
+## swallowed every tap on the title card — the game loaded and then could not be
+## started at all. It must stay transparent to pointer events.
+func test_html_shell_never_covers_the_canvas() -> void:
+	var shell := FileAccess.get_file_as_string("res://export/black_pine_shell.html")
+	assert_true(shell.length() > 0, "the HTML shell is missing")
+	var rotate := _css_rule(shell, "#rotate")
+	assert_true(rotate.contains("pointer-events: none"),
+			"#rotate can swallow taps: it has no `pointer-events: none`")
+	assert_false(rotate.contains("inset: 0"),
+			"#rotate covers the whole viewport")
 
 
 func test_main_menu_buttons_are_reachable() -> void:
@@ -139,6 +189,55 @@ func test_touch_controls_never_block_the_world() -> void:
 	touch.free()
 
 
+## Two touch buttons that overlap are worse than two that look cramped: the
+## first one found wins the tap, so a thumb aimed at CROUCH triggers USE and the
+## player has no way to tell why. The cluster is laid out by pure functions
+## precisely so this can be checked at sizes this machine does not have.
+func test_touch_buttons_never_overlap_each_other() -> void:
+	var screens := [
+		Vector2(1280, 720),     # desktop / tablet landscape
+		Vector2(1558, 720),     # phone landscape, after content scaling
+		Vector2(720, 1558),     # phone portrait, after content scaling
+		Vector2(960, 540),      # small tablet
+		Vector2(2048, 720),     # a very wide foldable
+	]
+	for view: Vector2 in screens:
+		for left_handed in [false, true]:
+			for ui_scale in [0.85, 1.0, 1.4]:
+				_assert_cluster_is_clean(view, left_handed, ui_scale)
+
+
+func _assert_cluster_is_clean(view: Vector2, left_handed: bool, ui_scale: float) -> void:
+	var button_size := TouchControls.button_size_for(view, ui_scale)
+	var margin := TouchControls.edge_margin_for(view)
+	var top_size := button_size * 0.8
+
+	# `TouchButton.contains` is a circle wider than the drawn glyph, so that is
+	# what has to stay apart — matching on the drawn rectangle would pass a
+	# layout in which two hit areas still fight over the same thumb.
+	var buttons: Array[Array] = []
+	for centre: Vector2 in TouchControls.cluster_centres(view, button_size, margin, left_handed):
+		buttons.append([centre, button_size * 0.62, button_size])
+	for centre: Vector2 in TouchControls.top_row_centres(view, top_size, margin, left_handed):
+		buttons.append([centre, top_size * 0.62, top_size])
+
+	var where := "%.0fx%.0f scale %.2f%s" % [view.x, view.y, ui_scale,
+			" left-handed" if left_handed else ""]
+	var screen := Rect2(Vector2.ZERO, view)
+	for i in buttons.size():
+		var centre: Vector2 = buttons[i][0]
+		var drawn: float = buttons[i][2]
+		assert_true(screen.encloses(Rect2(centre - Vector2(drawn, drawn) * 0.5,
+				Vector2(drawn, drawn))),
+				"%s: touch button %d is off screen at %s" % [where, i, centre])
+		for j in range(i + 1, buttons.size()):
+			var gap: float = centre.distance_to(buttons[j][0])
+			var needed: float = float(buttons[i][1]) + float(buttons[j][1])
+			assert_true(gap >= needed,
+					"%s: touch buttons %d and %d are %.1f apart, need %.1f"
+					% [where, i, j, gap, needed])
+
+
 func test_touch_buttons_cover_the_actions_a_run_needs() -> void:
 	var required := ["interact", "sprint", "crouch", "flashlight", "jump",
 			"inventory", "journal", "pause"]
@@ -211,6 +310,18 @@ func _controls_claiming_mouse(root: Control) -> PackedStringArray:
 		if control.mouse_filter != Control.MOUSE_FILTER_IGNORE:
 			out.append("%s (%s)" % [control.name, control.get_class()])
 	return out
+
+
+## The declaration block of the first rule whose selector is exactly `selector`.
+func _css_rule(source: String, selector: String) -> String:
+	var start := source.find(selector + " {")
+	if start < 0:
+		return ""
+	var open := source.find("{", start)
+	var close := source.find("}", open)
+	if open < 0 or close < 0:
+		return ""
+	return source.substr(open + 1, close - open - 1)
 
 
 func _find_all(node: Node, type_name: String) -> Array[Node]:

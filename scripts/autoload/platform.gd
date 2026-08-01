@@ -9,6 +9,16 @@ extends Node
 
 enum Form { DESKTOP, TABLET, PHONE }
 
+## The UI is authored against a 1280×720 canvas and `canvas_items` stretch maps
+## it onto whatever the window actually is. That mapping takes the *smaller* of
+## the two axis ratios, so a portrait phone at 390 px wide would scale the whole
+## interface by 390/1280 — a third of its intended size, which on the title card
+## reads as unreadably small text and on the HUD as unhittable buttons. Turning
+## the reference canvas to match the window keeps the scale factor governed by
+## the short edge in both orientations.
+const BASE_LONG_EDGE := 1280
+const BASE_SHORT_EDGE := 720
+
 var is_web: bool = false
 var is_mobile_os: bool = false
 var is_ios: bool = false
@@ -34,10 +44,33 @@ func _ready() -> void:
 	_user_agent = _read_user_agent()
 	form_factor = _detect_form_factor()
 	initial_hardware_class = _estimate_hardware_class()
+	# A browser window changes orientation and size freely, so this cannot be a
+	# one-off decision at boot.
+	get_window().size_changed.connect(apply_content_scale)
+	apply_content_scale()
 	Log.info("platform", "web=%s mobile=%s touch=%s form=%s class=%d gpu=%s" % [
 		is_web, is_mobile_os, has_touch, Form.keys()[form_factor],
 		initial_hardware_class, RenderingServer.get_video_adapter_name(),
 	])
+
+
+## Point the stretch reference canvas the same way the window is pointed, so the
+## interface scales off the short edge whichever way the device is held.
+func apply_content_scale() -> void:
+	var window := get_window()
+	var base := content_scale_for(window.size)
+	if base != Vector2i.ZERO and window.content_scale_size != base:
+		window.content_scale_size = base
+
+
+## The reference canvas for a given window size. Pure, so the rule can be tested
+## without a real window to resize.
+static func content_scale_for(window_size: Vector2i) -> Vector2i:
+	if window_size.x <= 0 or window_size.y <= 0:
+		return Vector2i.ZERO
+	if window_size.x >= window_size.y:
+		return Vector2i(BASE_LONG_EDGE, BASE_SHORT_EDGE)
+	return Vector2i(BASE_SHORT_EDGE, BASE_LONG_EDGE)
 
 
 ## True when the control scheme should default to on-screen touch controls.
@@ -68,6 +101,25 @@ func recommended_ui_scale() -> float:
 
 func user_agent() -> String:
 	return _user_agent
+
+
+## Fire a snippet at the hosting page, if there is one.
+##
+## The HTML shell exposes a couple of advisory hooks — a boot-stage report and a
+## request for landscape orientation. Both are optional by design, so this is
+## deliberately fire-and-forget: a shell that does not define them, or a browser
+## that refuses the call, must never be able to stop the game from starting.
+func run_js(code: String) -> void:
+	if not is_web or not Engine.has_singleton("JavaScriptBridge"):
+		return
+	var bridge: Object = Engine.get_singleton("JavaScriptBridge")
+	bridge.call("eval", code, false)
+
+
+## Ask the page to report a boot stage. Visible in the browser console, and
+## picked up by the shell's watchdog so a stall on a phone says where it stalled.
+func report_stage(stage: String) -> void:
+	run_js("window.blackPineStage && window.blackPineStage(%s)" % JSON.stringify(stage))
 
 
 func _read_user_agent() -> String:

@@ -108,13 +108,25 @@ cd build/web && python3 -m http.server 8000
 | Chrome / Edge (desktop) | verified | Tested by automation against the real export over WebGL2. |
 | Firefox (desktop) | expected | Same WebGL2 path. |
 | Safari 15+ (desktop) | expected | WebGL2 required; audio needs the tap-to-start gesture, which the title card provides. |
-| Chrome (Android) | expected | Quality director will typically settle at Low or Medium. |
-| Safari (iOS 15+) | expected | Single-threaded build specifically for this; a tap unlocks audio. |
+| Chrome (Android) | verified | Driven in a 390×844 portrait and 844×390 landscape viewport with touch as the only input, start to in-world. Quality director will typically settle at Low or Medium. |
+| Safari (iOS 15+) | expected | Single-threaded build specifically for this; a tap unlocks audio. Shares the touch path verified above, but WebKit has not been run here. |
 | Anything without WebGL2 | unsupported | The shell reports what is missing rather than showing a blank canvas. |
 
 Rows marked *expected* share the exact code path as a verified row and differ
 only in the vendor's WebGL2 implementation; they have not been run on a device
-here, and should be spot-checked before a public release.
+here, and should be spot-checked before a public release. "Verified" for Android
+means an emulated phone viewport in Chromium — the same engine, but not a real
+handset's GPU or memory limit.
+
+### Testing a phone build without a phone
+
+Four faults that made the game unstartable on a real phone were all invisible on
+a desktop, and three of them were invisible in a screenshot too. What surfaced
+them was driving the exported build in a viewport with `hasTouch: true`,
+`isMobile: true` and no mouse at all, then asserting on what
+`document.elementFromPoint` returns over the middle of the canvas. Any change to
+the HTML shell, the title card, the content scale or the touch layout should be
+re-checked that way rather than by resizing a desktop window.
 
 ### Two engine features that are not available on the web target
 

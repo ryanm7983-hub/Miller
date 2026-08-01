@@ -47,6 +47,20 @@ const TOP_BUTTON_DEFS := [
 ## Actions that behave as taps rather than holds.
 const TAP_ACTIONS := ["interact", "inventory", "journal", "pause", "jump"]
 
+## The cluster is two arcs, not one, and the geometry is spelled out rather than
+## swept: six buttons on a single radius either overlap — which is worse than
+## looking cramped, because an overlapping button silently steals its
+## neighbour's taps — or sit at a radius that puts the far ones out of thumb
+## reach. Radii are multiples of the button size; angles are degrees measured
+## from the pivot, 180° being straight along the bottom edge and 270° straight
+## up. The first ring is the one under the resting thumb.
+## Neighbours must sit at least `2 × TouchButton` hit radius apart, which for a
+## three-button arc is what sets the radii below.
+const CLUSTER_RINGS := [
+	{"radius": 1.75, "angles": [186.0, 228.0, 270.0]},
+	{"radius": 3.1, "angles": [200.0, 235.0, 270.0]},
+]
+
 var _buttons: Array[TouchButton] = []
 var _stick_origin := Vector2.ZERO
 var _stick_position := Vector2.ZERO
@@ -78,43 +92,69 @@ func refresh_ui_scale() -> void:
 	_button_touches.clear()
 
 	var view := get_viewport_rect().size
-	var shortest := minf(view.x, view.y)
 	var ui_scale := float(Settings.get_value("ui_scale"))
-	_stick_radius = shortest * STICK_RADIUS_FRACTION * ui_scale
-	var button_size := clampf(shortest * BUTTON_SIZE_FRACTION * ui_scale, BUTTON_MIN, BUTTON_MAX)
-	var margin := shortest * EDGE_MARGIN_FRACTION
+	var button_size := button_size_for(view, ui_scale)
+	var margin := edge_margin_for(view)
+	_stick_radius = minf(view.x, view.y) * STICK_RADIUS_FRACTION * ui_scale
 
-	_build_cluster(view, button_size, margin)
-	_build_top_row(view, button_size * 0.8, margin)
+	var centres := cluster_centres(view, button_size, margin, _left_handed)
+	for i in BUTTON_DEFS.size():
+		_add_button(BUTTON_DEFS[i], centres[i], button_size)
+
+	var top_size := button_size * 0.8
+	var top_centres := top_row_centres(view, top_size, margin, _left_handed)
+	for i in TOP_BUTTON_DEFS.size():
+		_add_button(TOP_BUTTON_DEFS[i], top_centres[i], top_size)
 	queue_redraw()
 
 
-## The action cluster is an arc around the thumb, not a grid: a grid puts the
+# ---------------------------------------------------------------------------
+# Layout geometry
+#
+# Pure functions so the layout can be checked at screen sizes this machine does
+# not have. Overlapping thumb buttons are invisible in a screenshot and only
+# show up as a tap that does the wrong thing.
+# ---------------------------------------------------------------------------
+
+static func button_size_for(view: Vector2, ui_scale: float) -> float:
+	return clampf(minf(view.x, view.y) * BUTTON_SIZE_FRACTION * ui_scale, BUTTON_MIN, BUTTON_MAX)
+
+
+static func edge_margin_for(view: Vector2) -> float:
+	return minf(view.x, view.y) * EDGE_MARGIN_FRACTION
+
+
+## The action cluster is two arcs around the thumb, not a grid: a grid puts the
 ## far corner out of reach on a large phone held one-handed.
-func _build_cluster(view: Vector2, button_size: float, margin: float) -> void:
+static func cluster_centres(view: Vector2, button_size: float, margin: float,
+		left_handed: bool) -> Array[Vector2]:
 	var pivot := Vector2(view.x - margin - button_size * 0.6, view.y - margin - button_size * 0.6)
-	if _left_handed:
+	if left_handed:
 		pivot.x = margin + button_size * 0.6
 
-	var arc_radius := button_size * 1.55
-	for i in BUTTON_DEFS.size():
-		var def: Dictionary = BUTTON_DEFS[i]
-		# Sweep upward and inward from the corner.
-		var angle := lerpf(PI * 1.02, PI * 1.52, float(i) / float(BUTTON_DEFS.size() - 1))
-		var ring := 1.0 + float(i % 2) * 0.62
-		var offset := Vector2(cos(angle), sin(angle)) * arc_radius * ring
-		if _left_handed:
-			offset.x = -offset.x
-		_add_button(def, pivot + offset, button_size)
+	var out: Array[Vector2] = []
+	for ring: Dictionary in CLUSTER_RINGS:
+		var radius: float = float(ring["radius"]) * button_size
+		for degrees: float in ring["angles"]:
+			if out.size() >= BUTTON_DEFS.size():
+				return out
+			var angle := deg_to_rad(degrees)
+			var offset := Vector2(cos(angle), sin(angle)) * radius
+			if left_handed:
+				offset.x = -offset.x
+			out.append(pivot + offset)
+	return out
 
 
-func _build_top_row(view: Vector2, button_size: float, margin: float) -> void:
+static func top_row_centres(view: Vector2, button_size: float, margin: float,
+		left_handed: bool) -> Array[Vector2]:
+	var out: Array[Vector2] = []
 	for i in TOP_BUTTON_DEFS.size():
-		var def: Dictionary = TOP_BUTTON_DEFS[i]
 		var x := view.x - margin - button_size * 0.5 - float(i) * (button_size * 1.35)
-		if _left_handed:
+		if left_handed:
 			x = margin + button_size * 0.5 + float(i) * (button_size * 1.35)
-		_add_button(def, Vector2(x, margin + button_size * 0.5), button_size)
+		out.append(Vector2(x, margin + button_size * 0.5))
+	return out
 
 
 func _add_button(def: Dictionary, centre: Vector2, button_size: float) -> void:

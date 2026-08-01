@@ -15,9 +15,11 @@ const MIN_DISPLAY_TIME := 1.2
 @onready var _status: Label = $Layout/Status
 @onready var _bar: ProgressBar = $Layout/Progress
 @onready var _prompt: Label = $Layout/Prompt
+@onready var _start_button: Button = $StartButton
 
 var _started := false
 var _elapsed := 0.0
+var _bar_target := 0.0
 
 
 func _ready() -> void:
@@ -28,12 +30,22 @@ func _ready() -> void:
 	_bar.visible = false
 	_status.text = ""
 	_prompt.text = "TAP TO BEGIN" if Platform.has_touch else "CLICK OR PRESS ANY KEY"
+	_start_button.pressed.connect(_begin)
 	_animate_prompt()
 	Log.info("boot", "bootstrap ready on %s" % Platform.user_agent())
+	Platform.report_stage("title card")
 
 
 func _process(delta: float) -> void:
 	_elapsed += delta
+	# The foundry only reports between its eight stages, and one stage can run
+	# for a couple of seconds on a phone. Drifting towards where the next stage
+	# will start keeps the bar moving throughout, so a slow device does not read
+	# as a frozen one — the floor rate is what guarantees visible movement, the
+	# proportional term is what lets a fast machine catch up without a jump.
+	if _bar.visible and _bar.value < _bar_target:
+		var gap := _bar_target - _bar.value
+		_bar.value += minf(gap, delta * maxf(0.05, gap * 3.0))
 
 
 ## Uses `_input` rather than `_unhandled_input`: a Control with the default
@@ -41,6 +53,11 @@ func _process(delta: float) -> void:
 ## reach the unhandled stage. That made the title card start on a key press but
 ## not on a tap — which is to say, not at all on the platform this game is
 ## primarily for.
+##
+## `$StartButton` covers the whole card and does the same job through the normal
+## GUI path. The redundancy is deliberate: this screen is the one place where a
+## missed input means the game is simply unplayable, with nothing on screen to
+## suggest why.
 func _input(event: InputEvent) -> void:
 	if _started:
 		return
@@ -60,27 +77,41 @@ func _animate_prompt() -> void:
 
 
 func _begin() -> void:
+	# Reachable from three places — a raw gesture, the button, and a key — so the
+	# guard belongs here rather than at each call site.
+	if _started:
+		return
 	_started = true
 	_prompt.visible = false
+	_start_button.disabled = true
 	_bar.visible = true
 	AudioDirector.unlock_audio()
+	# Now that there has been a gesture, the page is allowed to ask for landscape.
+	Platform.run_js("window.blackPineRequestLandscape && window.blackPineRequestLandscape()")
 
 	AssetFoundry.warm_up_progress.connect(_on_foundry_progress)
 	await AssetFoundry.warm_up()
 	AssetFoundry.warm_up_progress.disconnect(_on_foundry_progress)
 
-	_status.text = "Tuning the recorders"
-	_bar.value = 0.88
+	_set_stage(0.88, 0.97, "Tuning the recorders")
 	await AudioDirector.warm_up()
 
-	_status.text = "Ready"
-	_bar.value = 1.0
+	_set_stage(1.0, 1.0, "Ready")
 	# Never flash past the title card, even on a fast desktop.
 	if _elapsed < MIN_DISPLAY_TIME:
 		await get_tree().create_timer(MIN_DISPLAY_TIME - _elapsed).timeout
+	Platform.report_stage("menu")
 	SceneRouter.go_to("menu")
 
 
 func _on_foundry_progress(fraction: float, label: String) -> void:
-	_bar.value = fraction * 0.85
+	# The signal fires as a stage begins, so `reached` is where the bar is and
+	# the drift target is roughly where the next stage will pick up.
+	_set_stage(fraction * 0.85, fraction * 0.85 + 0.10, label)
+
+
+func _set_stage(reached: float, drift_to: float, label: String) -> void:
+	_bar.value = maxf(_bar.value, reached)
+	_bar_target = maxf(_bar_target, drift_to)
 	_status.text = label
+	Platform.report_stage(label)
