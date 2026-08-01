@@ -5,10 +5,13 @@ name: Build and publish the web build
 # The build is reproducible from the repository alone — the project ships no
 # binary assets, so all this needs is the engine and its web export template.
 #
-# `configure-pages` runs with `enablement: true`, which turns Pages on for the
-# repository the first time this workflow succeeds. If the repository is
-# private, Pages requires a paid plan and this step will fail with a clear
-# message rather than silently producing nothing.
+# Pages has to be switched on once by hand before this can publish:
+#   Settings -> Pages -> Source: "GitHub Actions"
+# `configure-pages` can create the site itself, but only with a token that has
+# repository admin scope; the default GITHUB_TOKEN does not, and the attempt
+# fails with "Resource not accessible by integration". Asking for it would mean
+# storing a personal access token in the repository, which is not worth it for
+# a setting that is one click.
 
 on:
   push:
@@ -76,8 +79,6 @@ jobs:
 
       - name: Configure Pages
         uses: actions/configure-pages@v5
-        with:
-          enablement: true
 
       - uses: actions/upload-pages-artifact@v3
         with:

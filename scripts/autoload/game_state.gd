@@ -28,7 +28,13 @@ var player_vitals: Dictionary = {
 
 ## --- World clock ----------------------------------------------------------
 var day: int = 1
-var time_of_day: float = 19.5  ## hours, 0..24
+## The run opens at dusk rather than in the dark. Night is the game's default
+## and dangerous state, but arriving into pitch black gives a new player nothing
+## to orient by; starting an hour before sunset lets them see the basin once,
+## and then lose it.
+const OPENING_HOUR := 17.4
+
+var time_of_day: float = OPENING_HOUR  ## hours, 0..24
 var weather_id: String = "clear"
 
 ## --- Progression ----------------------------------------------------------
@@ -65,7 +71,7 @@ func new_game(save_slot: int, seed_value: int = 0) -> void:
 	playtime = 0.0
 	chapter_id = "arrival"
 	day = 1
-	time_of_day = 19.5
+	time_of_day = OPENING_HOUR
 	weather_id = "clear"
 	player_position = Vector3.ZERO
 	player_yaw = 0.0
@@ -231,7 +237,7 @@ func deserialize(payload: Dictionary) -> bool:
 	playtime = float(payload.get("playtime", 0.0))
 	chapter_id = String(payload.get("chapter", "arrival"))
 	day = int(payload.get("day", 1))
-	time_of_day = float(payload.get("hour", 19.5))
+	time_of_day = float(payload.get("hour", OPENING_HOUR))
 	weather_id = String(payload.get("weather", "clear"))
 	current_region = String(payload.get("location", "The Basin"))
 

@@ -22,6 +22,7 @@ var chunks: ChunkManager
 var water: WaterManager
 var time_of_day: TimeOfDay
 var weather: WeatherSystem
+var landmarks: LandmarkBuilder
 
 var _environment: Environment
 var _sky_material: ShaderMaterial
@@ -54,6 +55,14 @@ func build(tracked: Node3D) -> void:
 	chunks.name = "Chunks"
 	add_child(chunks)
 	chunks.setup(generator, _tracked)
+
+	# Landmarks are built once and never streamed: all fourteen together are a
+	# few thousand triangles, and they have to be there when the player looks
+	# toward them from across the basin.
+	landmarks = LandmarkBuilder.new()
+	landmarks.name = "Landmarks"
+	add_child(landmarks)
+	landmarks.build(self)
 
 	_build_weather_effects()
 	world_built.emit()

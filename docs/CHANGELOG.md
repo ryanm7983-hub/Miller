@@ -5,6 +5,77 @@ not obvious, why.
 
 ---
 
+## M5 + M6 — AI, wildlife, horror direction, landmarks and story
+
+**Added**
+
+- `Perception`: graded sight and hearing with hysteresis between "suspicious"
+  and "certain". Line of sight ignores foliage on purpose — testing against a
+  forest of alpha-cut billboards makes sight random, and random is not tense.
+  Hearing reports a direction, not a position, which is why standing still
+  after being heard works.
+- `Steering`: navigation without a navmesh. A baked mesh would have to be
+  rebuilt every time a chunk streams in, dozens of times a minute, which a
+  single-threaded web build cannot afford.
+- Four enemy archetypes over one state machine, differing almost entirely by
+  tuning: the blind Listener that teaches the noise mechanic, the Surveyor that
+  hails you in a human voice from the road network, the Chorus that cannot hurt
+  you and is escaped by standing still, and the Wretch that leashes to its
+  territory so entering the mine is a calculated risk.
+- `Wildlife`: six species in one table-driven script. Fleeing animals publish
+  real noise, so they double as the player's early-warning system.
+- `HorrorDirector`: a tension model that spends rather than schedules. Every
+  event buys a mandatory cooldown, heavy events additionally require sustained
+  tension rather than a spike, and the insect layer fades as tension rises so
+  the forest goes quiet before anything happens.
+- `Population`: everything alive is spawned in a ring outside sight range and
+  retired behind the player, so cost is flat. The roster — not just the count —
+  changes with time of day and place. Daylight is close to safe by design.
+- `LandmarkBuilder`: the fourteen landmarks, assembled from MeshFactory parts.
+  These are the only hand-designed geometry in the game, because a ranger
+  station has to be recognisable where a forest has to be varied.
+- `ListeningPost`: the central interaction. Bringing a post online is safe and
+  costs a cell; playing it back is free and permanently makes the game harder.
+  The warning is in Rill's journal, which the player may never find.
+- `StoryDirector` and `DocumentLibrary`: state-driven chapters that let the
+  player do things out of order, sixteen readable documents, and four endings.
+  Reading raises the sanity floor — understanding the basin is protective.
+
+---
+
+## M3 + M4 — Player, touch controls, inventory, UI and web export
+
+**Added**
+
+- FPS controller built around noise as the game's currency; survival stats with
+  an exhaustion lock and a sanity-capped healing ceiling; torch flicker driven
+  by battery, sanity and threat rather than randomly.
+- `PlayerInput` unifying keyboard/mouse and touch; `TouchControls` owning every
+  finger in one handler, with a floating stick, an arc of thumb-reachable
+  buttons and a full left-handed mirror.
+- Grid inventory with footprints and drag-and-drop, live 3D item inspection,
+  document reader, HUD, settings generated from a declarative table, pause and
+  main menus, ending screen.
+- Web export preset (threads off, so no COOP/COEP headers are needed) and a
+  custom HTML shell with the game's palette, an orientation nudge and viewport
+  fitting that survives a mobile address bar collapsing.
+
+**Fixed during the milestone** — all three found by driving the exported build
+in a real browser, and none visible in code review or a screenshot:
+
+- The title card's root `Control` consumed the tap meant to start the game. A
+  key press still worked, which hid it on desktop; on a phone there is no key.
+- The main menu added a full-rect `CenterContainer` after its button column,
+  which rendered nothing and blocked every click.
+- The inventory's `_gui_input` never fired, because the drawn grid panel sat on
+  top of the root that was listening.
+
+`tests/test_ui_reachability.gd` now reproduces Godot's GUI hit test and asserts
+that every button in every screen is actually clickable, which is the general
+form of all three.
+
+---
+
 ## M2 — World, time and weather
 
 **Added**

@@ -131,8 +131,12 @@ func _build_ui() -> void:
 	_endings_label.text = _endings_text()
 	column.add_child(_endings_label)
 
+	# This container is added after the button column and covers the whole
+	# screen, so with the default mouse filter it sits on top and eats every
+	# click meant for the menu. It exists only to centre its children.
 	var centre := CenterContainer.new()
 	centre.set_anchors_preset(Control.PRESET_FULL_RECT)
+	centre.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(centre)
 
 	_settings = SettingsPanel.new()

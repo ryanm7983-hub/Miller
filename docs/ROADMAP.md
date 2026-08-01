@@ -40,7 +40,7 @@ leans on.
 - 13 tests covering geometry validity, LOD monotonicity, texture variance,
   audio loudness/looping and the music cross-fade.
 
-## M2 — World, time and weather *in progress*
+## M2 — World, time and weather **done**
 
 - Seeded heightmap over a 1 km² basin with rivers, lakes, cliffs and swamp.
 - Chunk streaming with per-band LOD and MultiMesh vegetation.
@@ -49,7 +49,7 @@ leans on.
 - Weather: clear, cloud, rain, storm, fog, wind — affecting visibility, AI
   hearing/sight, ambience and material wetness.
 
-## M3 — Player and input planned
+## M3 — Player and input **done**
 
 - `CharacterBody3D` controller: walk, sprint, crouch, jump, hide.
 - Survival stats: health, stamina, sanity, flashlight battery.
@@ -58,13 +58,13 @@ leans on.
 - Input abstraction: keyboard/mouse, gamepad, and a responsive touch layer with
   virtual stick, swipe look and thumb-sized action buttons.
 
-## M4 — Items, inventory and UI planned
+## M4 — Items, inventory and UI **done**
 
 - Item database and grid inventory with drag-and-drop and stacking.
 - 3D item inspection, readable documents, journal.
 - Main menu, settings, save/load slots, pause, HUD.
 
-## M5 — AI and horror direction planned
+## M5 — AI and horror direction **done**
 
 - Shared perception (sight cones with occlusion, hearing with weather falloff).
 - Four enemy archetypes with distinct hunting logic and a common state machine.
@@ -73,14 +73,14 @@ leans on.
 - Horror director: a tension model that schedules atmospheric events, escalates
   toward and away from scares, and drives music and sanity.
 
-## M6 — Places, puzzles and story planned
+## M6 — Places, puzzles and story *in progress*
 
 - Points of interest: cabins, fire tower, ranger station, hunting camps, mine,
   bunker, cemetery, ritual site, caves.
 - Puzzles tied to the listening-post network.
 - Objectives, lore documents, meaningful choices, four endings.
 
-## M7 — Ship planned
+## M7 — Ship *in progress*
 
 - Web export preset, custom HTML shell, orientation and audio-unlock handling.
 - Full test pass, documentation, changelog.

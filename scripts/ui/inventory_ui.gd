@@ -20,7 +20,6 @@ signal closed()
 var inventory: Inventory
 var stats: SurvivalStats
 
-var _grid_rect := Rect2()
 var _drag_index := -1
 var _drag_offset := Vector2.ZERO
 var _drag_position := Vector2.ZERO
@@ -76,6 +75,11 @@ func _build() -> void:
 		Inventory.COLUMNS * (CELL_SIZE + CELL_GAP) + CELL_GAP,
 		Inventory.ROWS * (CELL_SIZE + CELL_GAP) + CELL_GAP + 34)
 	_grid_panel.draw.connect(_draw_grid)
+	# Input is taken on the grid panel itself, not on the InventoryUI root: the
+	# panel is on top, so a root-level `_gui_input` never sees the clicks that
+	# land on it. Everything below therefore works in panel-local coordinates.
+	_grid_panel.mouse_filter = Control.MOUSE_FILTER_STOP
+	_grid_panel.gui_input.connect(_on_grid_input)
 	columns.add_child(_grid_panel)
 
 	# Right: detail, preview and actions.
@@ -187,9 +191,7 @@ func _process(delta: float) -> void:
 func _draw_grid() -> void:
 	if inventory == null:
 		return
-	var origin := Vector2(CELL_GAP, 28.0)
-	_grid_rect = Rect2(_grid_panel.global_position + origin,
-			Vector2(Inventory.COLUMNS, Inventory.ROWS) * (CELL_SIZE + CELL_GAP))
+	var origin := _grid_origin()
 
 	var font := _grid_panel.get_theme_default_font()
 	if font != null:
@@ -222,7 +224,7 @@ func _draw_grid() -> void:
 		_draw_slot(origin, i, false)
 
 	if _drag_index >= 0:
-		_draw_slot(_drag_position - _drag_offset - _grid_panel.global_position, _drag_index, true)
+		_draw_slot(_drag_position - _drag_offset, _drag_index, true)
 
 
 func _draw_slot(origin: Vector2, index: int, floating: bool) -> void:
@@ -263,7 +265,7 @@ func _draw_slot(origin: Vector2, index: int, floating: bool) -> void:
 # Input
 # ---------------------------------------------------------------------------
 
-func _gui_input(event: InputEvent) -> void:
+func _on_grid_input(event: InputEvent) -> void:
 	if inventory == null:
 		return
 	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT:
@@ -282,6 +284,7 @@ func _gui_input(event: InputEvent) -> void:
 		_drag_position = event.position
 		if _drag_index >= 0:
 			_grid_panel.queue_redraw()
+			accept_event()
 
 
 func _begin_drag(position: Vector2) -> void:
@@ -318,8 +321,9 @@ func _end_drag(position: Vector2) -> void:
 	_grid_panel.queue_redraw()
 
 
+## Top-left of the cell grid, in `_grid_panel`-local coordinates.
 func _grid_origin() -> Vector2:
-	return _grid_panel.global_position + Vector2(CELL_GAP, 28.0)
+	return Vector2(CELL_GAP, 28.0)
 
 
 func _cell_at(position: Vector2) -> Vector2i:

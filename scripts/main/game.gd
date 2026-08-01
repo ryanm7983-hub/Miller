@@ -21,6 +21,8 @@ var world: WorldRoot
 var player: Player
 var inventory: Inventory
 var story: StoryDirector
+var horror: HorrorDirector
+var population: Population
 var hud: HUD
 var touch_controls: TouchControls
 var screen_effects: ScreenEffects
@@ -67,6 +69,14 @@ func _start() -> void:
 	story.name = "Story"
 	add_child(story)
 
+	horror = HorrorDirector.new()
+	horror.name = "Horror"
+	add_child(horror)
+
+	population = Population.new()
+	population.name = "Population"
+	add_child(population)
+
 	var is_new_run := GameState.player_position == Vector3.ZERO
 	if is_new_run:
 		player.spawn_at(world.generator.spawn_point(), world.generator.spawn_yaw())
@@ -77,6 +87,8 @@ func _start() -> void:
 		inventory.deserialize(GameState.inventory_payload)
 
 	story.setup(player, world)
+	horror.setup(player, world)
+	population.setup(player, world)
 	hud.bind(player, world)
 	screen_effects.bind(player)
 	inventory_ui.bind(inventory, player.stats)
