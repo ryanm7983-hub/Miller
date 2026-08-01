@@ -1,0 +1,17 @@
+node_modules/
+dist/
+build/
+.env
+.env.local
+*.log
+npm-debug.log*
+
+# SQLite databases (created on first run)
+server/data/*.db
+server/data/*.db-shm
+server/data/*.db-wal
+
+# Editor / OS
+.DS_Store
+.vscode/
+.idea/

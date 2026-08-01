@@ -1,0 +1,147 @@
+/**
+ * Sample catalog backing the MockProvider.
+ *
+ * ⚠️ SAMPLE DATA — none of these prices are real. They exist so the UI, the
+ * price-history chart and the alerting pipeline are fully exercisable without
+ * any paid API key. Everything derived from this file is stored with
+ * `source = 'mock'` and surfaced in the API as `isMock: true`.
+ */
+export const SAMPLE_PRODUCTS = [
+  {
+    slug: 'sony-wh1000xm5',
+    title: 'Sony WH-1000XM5 Wireless Noise-Cancelling Headphones',
+    brand: 'Sony',
+    model: 'WH-1000XM5',
+    upc: '027242923004',
+    category: 'Headphones',
+    basePriceCents: 39800,
+    retailers: ['Amazon', 'Best Buy', 'Walmart', 'Target', 'eBay', 'B&H Photo'],
+  },
+  {
+    slug: 'airpods-pro-2-usbc',
+    title: 'Apple AirPods Pro (2nd Generation, USB-C)',
+    brand: 'Apple',
+    model: 'MTJV3AM/A',
+    upc: '195949052248',
+    category: 'Headphones',
+    basePriceCents: 24900,
+    retailers: ['Amazon', 'Walmart', 'Target', 'Best Buy', 'Costco'],
+  },
+  {
+    slug: 'switch-oled',
+    title: 'Nintendo Switch OLED Model — White Joy-Con',
+    brand: 'Nintendo',
+    model: 'HEG-001',
+    upc: '045496882730',
+    category: 'Gaming',
+    basePriceCents: 34999,
+    retailers: ['Amazon', 'Walmart', 'Target', 'Best Buy', 'eBay'],
+  },
+  {
+    slug: 'lg-c4-55',
+    title: 'LG C4 55" OLED evo 4K Smart TV (2024)',
+    brand: 'LG',
+    model: 'OLED55C4PUA',
+    upc: '195174059227',
+    category: 'Televisions',
+    basePriceCents: 129699,
+    retailers: ['Amazon', 'Best Buy', 'Walmart', 'Costco', 'B&H Photo'],
+  },
+  {
+    slug: 'dyson-v15-detect',
+    title: 'Dyson V15 Detect Cordless Vacuum Cleaner',
+    brand: 'Dyson',
+    model: 'V15 Detect',
+    upc: '885609020235',
+    category: 'Home',
+    basePriceCents: 74999,
+    retailers: ['Amazon', 'Target', 'Best Buy', 'Walmart', 'eBay'],
+  },
+  {
+    slug: 'instant-pot-duo-6qt',
+    title: 'Instant Pot Duo 7-in-1 Electric Pressure Cooker, 6 Quart',
+    brand: 'Instant Pot',
+    model: 'Duo 60',
+    upc: '810028580657',
+    category: 'Kitchen',
+    basePriceCents: 9995,
+    retailers: ['Amazon', 'Walmart', 'Target', 'Costco'],
+  },
+  {
+    slug: 'anker-737-powerbank',
+    title: 'Anker 737 Power Bank (PowerCore 24K, 140W)',
+    brand: 'Anker',
+    model: 'A1289',
+    upc: '194644092887',
+    category: 'Accessories',
+    basePriceCents: 14999,
+    retailers: ['Amazon', 'Walmart', 'Best Buy', 'eBay', 'Newegg'],
+  },
+  {
+    slug: 'ninja-creami',
+    title: 'Ninja CREAMi 7-in-1 Ice Cream & Frozen Dessert Maker',
+    brand: 'Ninja',
+    model: 'NC301',
+    upc: '622356565509',
+    category: 'Kitchen',
+    basePriceCents: 22999,
+    retailers: ['Amazon', 'Target', 'Walmart', 'Costco', 'eBay'],
+  },
+  {
+    slug: 'samsung-990-pro-2tb',
+    title: 'Samsung 990 PRO 2TB PCIe 4.0 NVMe M.2 SSD',
+    brand: 'Samsung',
+    model: 'MZ-V9P2T0B/AM',
+    upc: '887276613666',
+    category: 'Computer Components',
+    basePriceCents: 16999,
+    retailers: ['Amazon', 'Newegg', 'Best Buy', 'Walmart', 'B&H Photo'],
+  },
+  {
+    slug: 'kindle-paperwhite-2024',
+    title: 'Amazon Kindle Paperwhite (16 GB, 2024)',
+    brand: 'Amazon',
+    model: 'PW12',
+    upc: '840268952679',
+    category: 'E-Readers',
+    basePriceCents: 15999,
+    retailers: ['Amazon', 'Best Buy', 'Target', 'eBay'],
+  },
+  {
+    slug: 'bose-qc-ultra',
+    title: 'Bose QuietComfort Ultra Wireless Headphones',
+    brand: 'Bose',
+    model: '880066-0100',
+    upc: '017817846455',
+    category: 'Headphones',
+    basePriceCents: 42900,
+    retailers: ['Amazon', 'Best Buy', 'Target', 'Walmart', 'eBay'],
+  },
+  {
+    slug: 'roomba-j7-plus',
+    title: 'iRobot Roomba j7+ Self-Emptying Robot Vacuum',
+    brand: 'iRobot',
+    model: 'j7550',
+    upc: '885155023452',
+    category: 'Home',
+    basePriceCents: 59999,
+    retailers: ['Amazon', 'Target', 'Best Buy', 'Costco', 'eBay'],
+  },
+];
+
+/**
+ * Per-retailer behaviour for sample offers: a price bias, free-shipping
+ * threshold, flat shipping fee and typical delivery speed in days.
+ */
+export const RETAILER_PROFILES = {
+  Amazon: { bias: -0.01, freeShipOver: 3500, shipCents: 599, shipDays: 2, host: 'www.amazon.com' },
+  Walmart: { bias: -0.02, freeShipOver: 3500, shipCents: 699, shipDays: 3, host: 'www.walmart.com' },
+  Target: { bias: 0.005, freeShipOver: 3500, shipCents: 599, shipDays: 3, host: 'www.target.com' },
+  'Best Buy': { bias: 0.01, freeShipOver: 3500, shipCents: 699, shipDays: 3, host: 'www.bestbuy.com' },
+  eBay: { bias: -0.06, freeShipOver: 0, shipCents: 0, shipDays: 5, host: 'www.ebay.com' },
+  'B&H Photo': { bias: 0.0, freeShipOver: 4900, shipCents: 899, shipDays: 4, host: 'www.bhphotovideo.com' },
+  Newegg: { bias: -0.015, freeShipOver: 2500, shipCents: 799, shipDays: 4, host: 'www.newegg.com' },
+  Costco: { bias: -0.03, freeShipOver: 0, shipCents: 0, shipDays: 6, host: 'www.costco.com' },
+};
+
+export const DEFAULT_RETAILERS = ['Amazon', 'Walmart', 'Target', 'Best Buy', 'eBay'];

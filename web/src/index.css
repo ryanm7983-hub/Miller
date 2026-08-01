@@ -1,0 +1,143 @@
+@import 'tailwindcss';
+
+/*
+ * Design tokens. Light and dark are two selected sets of the same palette
+ * (chart surfaces included), so the price-history chart renders on exactly the
+ * surface its categorical palette was validated against.
+ */
+:root {
+  color-scheme: light;
+  --ps-plane: #f9f9f7;
+  --ps-surface: #fcfcfb;
+  --ps-surface-2: #f0efec;
+  --ps-ink: #0b0b0b;
+  --ps-ink-2: #52514e;
+  --ps-muted: #898781;
+  --ps-line: #e1e0d9;
+  --ps-baseline: #c3c2b7;
+  --ps-brand: #2a78d6;
+  --ps-brand-ink: #ffffff;
+  --ps-good: #0ca30c;
+  --ps-good-text: #006300;
+  --ps-critical: #d03b3b;
+  --ps-warning: #fab219;
+
+  /* Categorical series slots — see references/palette.md (validated set). */
+  --ps-series-1: #2a78d6;
+  --ps-series-2: #eb6834;
+  --ps-series-3: #1baf7a;
+  --ps-series-4: #eda100;
+  --ps-series-5: #e87ba4;
+  --ps-series-6: #008300;
+  --ps-series-7: #4a3aa7;
+  --ps-series-8: #e34948;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    color-scheme: dark;
+    --ps-plane: #0d0d0d;
+    --ps-surface: #1a1a19;
+    --ps-surface-2: #242423;
+    --ps-ink: #ffffff;
+    --ps-ink-2: #c3c2b7;
+    --ps-muted: #898781;
+    --ps-line: #2c2c2a;
+    --ps-baseline: #383835;
+    --ps-brand: #3987e5;
+    --ps-good: #0ca30c;
+    --ps-good-text: #0ca30c;
+    --ps-critical: #e66767;
+
+    --ps-series-1: #3987e5;
+    --ps-series-2: #d95926;
+    --ps-series-3: #199e70;
+    --ps-series-4: #c98500;
+    --ps-series-5: #d55181;
+    --ps-series-6: #008300;
+    --ps-series-7: #9085e9;
+    --ps-series-8: #e66767;
+  }
+}
+
+@theme inline {
+  --color-plane: var(--ps-plane);
+  --color-surface: var(--ps-surface);
+  --color-surface-2: var(--ps-surface-2);
+  --color-ink: var(--ps-ink);
+  --color-ink-2: var(--ps-ink-2);
+  --color-muted: var(--ps-muted);
+  --color-line: var(--ps-line);
+  --color-baseline: var(--ps-baseline);
+  --color-brand: var(--ps-brand);
+  --color-brand-ink: var(--ps-brand-ink);
+  --color-good: var(--ps-good);
+  --color-good-text: var(--ps-good-text);
+  --color-critical: var(--ps-critical);
+  --color-warning: var(--ps-warning);
+  --font-sans: system-ui, -apple-system, 'Segoe UI', sans-serif;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  background: var(--ps-plane);
+  color: var(--ps-ink);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  /* Room for the fixed bottom nav on small screens + iOS safe area. */
+  overscroll-behavior-y: none;
+}
+
+@layer components {
+  .card {
+    @apply rounded-2xl bg-surface ring-1 ring-line;
+  }
+
+  /*
+   * Tailwind v4 cannot `@apply` one custom component class inside another, so
+   * each button variant carries the shared base declarations.
+   */
+  .btn,
+  .btn-primary,
+  .btn-secondary,
+  .btn-ghost {
+    @apply inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold
+      transition-colors disabled:cursor-not-allowed disabled:opacity-50;
+  }
+
+  .btn-primary {
+    @apply bg-brand text-white hover:opacity-90;
+  }
+
+  .btn-secondary {
+    @apply bg-surface-2 text-ink ring-1 ring-line hover:bg-line/60;
+  }
+
+  .btn-ghost {
+    @apply text-ink-2 hover:bg-surface-2;
+  }
+
+  .field {
+    @apply w-full rounded-xl bg-surface px-4 py-3 text-base text-ink ring-1 ring-line
+      outline-none placeholder:text-muted focus:ring-2 focus:ring-brand;
+  }
+
+  .chip {
+    @apply inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium;
+  }
+
+  .tabular {
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+/* Recharts: keep the focus/active outline from boxing the plot area. */
+.recharts-wrapper:focus,
+.recharts-surface:focus {
+  outline: none;
+}
