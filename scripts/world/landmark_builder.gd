@@ -180,6 +180,10 @@ func _clutter(parent: Node3D, radius: float, count: int) -> void:
 
 func _build_trailhead(root: Node3D) -> void:
 	_mesh(root, "sign", Vector3(0, 0, 0), "planks")
+	# Walking out is available from the first minute and is never signposted as
+	# an ending. Refusing to participate has to be a real option.
+	_ending_site(root, Vector3(0, 0, 5.0), "walk_out",
+			"Walk back up the fire road", "Walk back up the fire road", false)
 	for i in 4:
 		_mesh(root, "fence", Vector3(-4.0 + float(i) * 2.4, 0, 3.0), "rot_planks")
 	_mesh(root, "barrel", Vector3(2.2, 0, -1.4), "rust")
@@ -271,6 +275,11 @@ func _build_mine(root: Node3D) -> void:
 	_mesh(root, "barrel", Vector3(-2.2, 0, 0.8), "rust")
 	_document(root, "note_mine", Vector3(0.6, 0.4, -6.0))
 	_supplies(root, Vector3(-0.8, 0.4, -7.0), 3)
+	# Rill got nine of eleven posts down and could not find the last two. The
+	# resin store is where the basin keeps what it has taken.
+	_ending_site(root, Vector3(0.0, 0.0, -8.2), "silence",
+			"The store is sealed and you have nothing to burn it with",
+			"Burn the resin store and take the network down")
 
 
 func _build_bunker(root: Node3D) -> void:
@@ -311,6 +320,9 @@ func _build_ritual(root: Node3D) -> void:
 		post.rotation.x = _rng.randf_range(-0.06, 0.06)
 	_mesh(root, "listening_post", Vector3.ZERO, "rust")
 	_document(root, "note_ritual", Vector3(1.4, 0.3, 0.6))
+	_ending_site(root, Vector3(0, 0, 2.2), "answer",
+			"There is nothing here to answer yet",
+			"Say your own name into the ring")
 
 
 func _build_relay(root: Node3D) -> void:
@@ -320,6 +332,9 @@ func _build_relay(root: Node3D) -> void:
 	_mesh(root, "antenna", Vector3(0, 0, 3.4), "metal", Vector3(1.4, 1.6, 1.4))
 	_mesh(root, "listening_post", Vector3(-2.4, 0, 1.4), "rust")
 	_document(body, "note_marsh_2", Vector3(1.0, 0.4, 0.9))
+	_ending_site(root, Vector3(1.2, 0, 3.4), "transmit",
+			"The relay is dead and the network is barely awake",
+			"Bring the relay up and let the basin be heard")
 
 
 func _build_shack(root: Node3D) -> void:
@@ -392,6 +407,15 @@ func _spawn_post(index: int, position: Vector3) -> void:
 	add_child(post)
 	post.configure("post_%02d" % index, index)
 	_posts.append(post)
+
+
+## Attach one of the four places a run can be ended.
+func _ending_site(parent: Node3D, position: Vector3, ending_id: String,
+		locked: String, ready_text: String, gated: bool = true) -> void:
+	var site := preload("res://scenes/props/ending_site.tscn").instantiate()
+	site.position = position
+	parent.add_child(site)
+	site.configure(ending_id, locked, ready_text, gated)
 
 
 func posts() -> Array[Node3D]:

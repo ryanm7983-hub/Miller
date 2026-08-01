@@ -298,3 +298,38 @@ func _find_light(node: Node) -> Light3D:
 		if found != null:
 			return found
 	return null
+
+
+# ---------------------------------------------------------------------------
+# Endings
+# ---------------------------------------------------------------------------
+
+func test_every_ending_is_reachable_from_a_place_in_the_world() -> void:
+	# The endings live in a data table; without a site in the world that calls
+	# trigger_ending(), they are unreachable and the game has no conclusion.
+	var source := FileAccess.get_file_as_string("res://scripts/world/landmark_builder.gd")
+	assert_true(source.length() > 0, "could not read the landmark builder")
+	for ending_id: String in StoryDirector.ENDINGS:
+		assert_true(source.contains('"%s"' % ending_id),
+				"ending '%s' has no site in the world" % ending_id)
+	assert_eq(StoryDirector.ENDINGS.size(), StoryDirector.ENDING_COUNT,
+			"the ending count the menu reports does not match the table")
+
+
+func test_endings_have_titles_and_prose() -> void:
+	for ending_id: String in StoryDirector.ENDINGS:
+		var entry := StoryDirector.ending_entry(ending_id)
+		assert_true(String(entry["title"]).length() > 2, "ending '%s' has no title" % ending_id)
+		assert_true(String(entry["body"]).length() > 200,
+				"ending '%s' has barely any text" % ending_id)
+
+
+func test_walking_out_is_never_gated() -> void:
+	# Refusing to participate has to be available from the first minute, or it
+	# is not a refusal, it is just a worse version of the other endings.
+	var director := StoryDirector.new()
+	tree.root.add_child(director)
+	assert_eq(director.resolve_ending("walk_out"), "walk_out")
+	assert_eq(director.resolve_ending(""), "walk_out",
+			"an unrecognised commitment should fall through to walking out")
+	director.free()
