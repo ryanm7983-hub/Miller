@@ -11,22 +11,28 @@ Android Chrome and iOS Safari from a single build.
 
 ## ▶ Play it
 
-A ready-to-serve build is committed at [`docs/play/`](docs/play/). GitHub Pages
-has to be switched on once — the workflow token is not permitted to do it — and
-then the game is live:
+A ready-to-serve build is committed at [`docs/play/`](docs/play/).
 
-* **Settings → Pages → Source: "Deploy from a branch"**, branch
-  `claude/black-pine-horror-game-kjajt2`, folder `/docs` →
-  `https://ryanm7983-hub.github.io/Miller/play/`
-* or **Source: "GitHub Actions"** and re-run the workflow, which builds from
-  source (running the test suite as a gate) and publishes to
-  `https://ryanm7983-hub.github.io/Miller/`
-
-Or run it locally in ten seconds:
+**Locally, right now — no setup:**
 
 ```bash
-cd docs/play && python3 -m http.server 8000   # then open http://localhost:8000
+cd docs/play && python3 -m http.server 8000   # open http://localhost:8000
 ```
+
+**Hosted:** GitHub Pages has to be switched on once by hand. The Actions token
+is not permitted to create a Pages site (`Resource not accessible by
+integration`), and the alternative is storing a personal access token in the
+repository for the sake of one click.
+
+Go to **Settings → Pages**, set **Source** to *Deploy from a branch*, choose
+branch `claude/black-pine-horror-game-kjajt2` and folder **`/docs`**, and save.
+After a minute or two:
+
+> **https://ryanm7983-hub.github.io/Miller/**
+
+Choosing *GitHub Actions* as the source instead makes the workflow build from
+source — running the test suite as a gate — and publishes to the same URL, with
+no binaries in git. That is the better long-term arrangement.
 
 Headphones recommended. The game is mostly quiet on purpose.
 

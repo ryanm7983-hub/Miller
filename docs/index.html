@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The Black Pine</title>
+<!-- Plain HTML rather than Markdown, and a site-root .nojekyll beside it.
+     Jekyll's Liquid parser chokes on the `{{` inside Godot's minified loader,
+     which fails the Pages build and 404s the whole site. Disabling Jekyll is
+     the fix; not depending on it to render this page is belt and braces. -->
+<style>
+  body { margin:0; min-height:100dvh; display:flex; flex-direction:column;
+         align-items:center; justify-content:center; gap:1.4rem; background:#06070a;
+         color:#d5d3cb; font-family:'Iowan Old Style',Palatino,Georgia,serif;
+         text-align:center; padding:2rem; }
+  h1 { font-size:clamp(1.6rem,6vw,2.8rem); letter-spacing:.3em; margin:0 0 0 .3em; font-weight:400; }
+  p { color:#6f736a; font-style:italic; margin:0; max-width:32rem; line-height:1.6; }
+  a.play { display:inline-block; padding:.9rem 2.4rem; border:1px solid #5c7353;
+           color:#d5d3cb; text-decoration:none; letter-spacing:.2em; font-size:.95rem; }
+  a.play:hover { background:#101512; }
+  .links { color:#4a4e47; font-size:.85rem; }
+  .links a { color:#6f736a; }
+</style>
+</head>
+<body>
+  <h1>THE BLACK PINE</h1>
+  <p>the basin remembers every sound it has ever heard</p>
+  <a class="play" href="play/">PLAY IN YOUR BROWSER</a>
+  <p class="links">
+    Headphones recommended &middot; first load is about 9&nbsp;MB<br>
+    <a href="https://github.com/ryanm7983-hub/Miller">source</a> &middot;
+    <a href="STORY.md">story (spoilers)</a> &middot;
+    <a href="ARCHITECTURE.md">architecture</a>
+  </p>
+</body>
+</html>
