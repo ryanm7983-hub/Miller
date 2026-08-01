@@ -643,6 +643,65 @@ static func plane(size: float, divisions: int = 1, uv_scale: float = 1.0) -> Arr
 	return _finish(st, true)
 
 
+## Small hand-props for the inventory's 3D inspection view.
+##
+## These exist only to be turned over at arm's length, so they are built to be
+## readable in silhouette at one scale and nothing else — a few dozen triangles
+## each. Item ids map onto these shapes in AssetFoundry.
+static func item_shape(kind: String) -> ArrayMesh:
+	var st := _new_surface()
+	match kind:
+		"cell":
+			add_tapered_cylinder(st, Vector3(0, -0.09, 0), 0.18, 0.045, 0.045, 10, Vector3.ZERO, 1)
+			add_tapered_cylinder(st, Vector3(0, 0.09, 0), 0.02, 0.018, 0.018, 6, Vector3.ZERO, 1)
+		"key":
+			add_box(st, Vector3(0, -0.02, 0), Vector3(0.014, 0.14, 0.014), 1.0, 0.0, 1.0)
+			add_tapered_cylinder(st, Vector3(0, 0.05, 0), 0.001, 0.038, 0.038, 10, Vector3.ZERO, 1)
+			add_box(st, Vector3(0.022, -0.075, 0), Vector3(0.03, 0.016, 0.012), 1.0, 0.0, 1.0)
+			add_box(st, Vector3(0.02, -0.045, 0), Vector3(0.026, 0.014, 0.012), 1.0, 0.0, 1.0)
+		"reel":
+			add_tapered_cylinder(st, Vector3(0, -0.012, 0), 0.024, 0.10, 0.10, 16, Vector3.ZERO, 1)
+			add_tapered_cylinder(st, Vector3(0, -0.02, 0), 0.04, 0.028, 0.028, 8, Vector3.ZERO, 1)
+		"paper":
+			add_box(st, Vector3.ZERO, Vector3(0.14, 0.002, 0.19), 1.0, 0.0, 1.0)
+			add_box(st, Vector3(0.0, 0.003, -0.06), Vector3(0.10, 0.001, 0.006), 1.0, 0.0, 1.0)
+			add_box(st, Vector3(0.0, 0.003, -0.03), Vector3(0.12, 0.001, 0.006), 1.0, 0.0, 1.0)
+			add_box(st, Vector3(-0.01, 0.003, 0.0), Vector3(0.09, 0.001, 0.006), 1.0, 0.0, 1.0)
+		"bottle":
+			add_tapered_cylinder(st, Vector3(0, -0.09, 0), 0.13, 0.042, 0.038, 10, Vector3.ZERO, 2)
+			add_tapered_cylinder(st, Vector3(0, 0.04, 0), 0.05, 0.02, 0.018, 8, Vector3.ZERO, 1)
+			add_tapered_cylinder(st, Vector3(0, 0.09, 0), 0.02, 0.024, 0.024, 8, Vector3.ZERO, 1)
+		"torch":
+			add_tapered_cylinder(st, Vector3(0, -0.13, 0), 0.22, 0.032, 0.036, 10, Vector3.ZERO, 2)
+			add_tapered_cylinder(st, Vector3(0, 0.09, 0), 0.05, 0.038, 0.058, 12, Vector3.ZERO, 1)
+		"recorder":
+			add_box(st, Vector3.ZERO, Vector3(0.22, 0.07, 0.16), 1.0, 0.0, 0.9)
+			add_tapered_cylinder(st, Vector3(-0.05, 0.035, -0.02), 0.012, 0.05, 0.05, 12, Vector3.ZERO, 1)
+			add_tapered_cylinder(st, Vector3(0.05, 0.035, -0.02), 0.012, 0.05, 0.05, 12, Vector3.ZERO, 1)
+			add_box(st, Vector3(0, 0.04, 0.055), Vector3(0.09, 0.012, 0.03), 1.0, 0.0, 1.0)
+		"fuse":
+			add_tapered_cylinder(st, Vector3(0, -0.05, 0), 0.10, 0.022, 0.022, 8, Vector3.ZERO, 1)
+			add_tapered_cylinder(st, Vector3(0, -0.055, 0), 0.015, 0.028, 0.028, 8, Vector3.ZERO, 1)
+			add_tapered_cylinder(st, Vector3(0, 0.04, 0), 0.015, 0.028, 0.028, 8, Vector3.ZERO, 1)
+		"crank":
+			add_tapered_cylinder(st, Vector3(0, -0.09, 0), 0.18, 0.014, 0.014, 6, Vector3.ZERO, 1)
+			add_box(st, Vector3(0.05, 0.09, 0), Vector3(0.11, 0.016, 0.016), 1.0, 0.0, 1.0)
+			add_tapered_cylinder(st, Vector3(0.1, 0.06, 0), 0.06, 0.018, 0.018, 6, Vector3.ZERO, 1)
+		"cutters":
+			add_box(st, Vector3(-0.06, -0.02, 0), Vector3(0.16, 0.018, 0.018), 1.0, 0.0, 1.0)
+			add_box(st, Vector3(-0.06, 0.02, 0), Vector3(0.16, 0.018, 0.018), 1.0, 0.0, 1.0)
+			add_box(st, Vector3(0.07, -0.008, 0), Vector3(0.09, 0.012, 0.014), 1.0, 0.0, 1.0)
+			add_box(st, Vector3(0.07, 0.008, 0), Vector3(0.09, 0.012, 0.014), 1.0, 0.0, 1.0)
+		"map":
+			add_box(st, Vector3.ZERO, Vector3(0.24, 0.004, 0.17), 1.0, 0.0, 1.0)
+			add_box(st, Vector3(0, 0.004, 0), Vector3(0.005, 0.002, 0.17), 1.0, 0.0, 1.0)
+		"core":
+			add_tapered_cylinder(st, Vector3(0, -0.07, 0), 0.14, 0.02, 0.018, 8, Vector3.ZERO, 3)
+		_:
+			add_box(st, Vector3.ZERO, Vector3(0.12, 0.12, 0.12), 1.0, 0.0, 0.85)
+	return _finish(st)
+
+
 ## Vertical quad facing -Z, used for fog cards and impostors.
 static func billboard(width: float, height: float) -> ArrayMesh:
 	var st := _new_surface()

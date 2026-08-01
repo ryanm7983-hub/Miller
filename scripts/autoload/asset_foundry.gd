@@ -409,6 +409,48 @@ func _build_prop_meshes() -> void:
 	_meshes["fog_card"] = _bind_materials(MeshFactory.billboard(9.0, 4.0), ["fog_card"])
 	_meshes["unit_plane"] = MeshFactory.plane(1.0, 1, 1.0)
 	_meshes["water_plane"] = MeshFactory.plane(1.0, 8, 1.0)
+	_build_item_meshes()
+
+
+## Item ids map onto a small set of hand-prop shapes for the inventory's
+## inspection view. Anything unmapped falls back to a plain block, which is
+## honest rather than misleading.
+const ITEM_SHAPES := {
+	"recorder": ["recorder", "rust"],
+	"flashlight": ["torch", "metal"],
+	"basin_map": ["map", "paper"],
+	"battery_cell": ["cell", "rust"],
+	"gauze": ["paper", "fabric"],
+	"tincture": ["bottle", "glass"],
+	"coffee": ["bottle", "metal"],
+	"key_station": ["key", "metal"],
+	"key_cabin": ["key", "rust"],
+	"key_mine": ["key", "metal"],
+	"fuse": ["fuse", "concrete"],
+	"crank": ["crank", "rust"],
+	"tape_a": ["reel", "metal"],
+	"tape_b": ["reel", "metal"],
+	"tape_c": ["reel", "rust"],
+	"resin_core": ["core", "glass"],
+	"bolt_cutters": ["cutters", "rust"],
+}
+
+
+func _build_item_meshes() -> void:
+	var built: Dictionary = {}
+	for item_id: String in ItemDatabase.all_ids():
+		var entry: Array = ITEM_SHAPES.get(item_id, ["paper", "paper"])
+		var kind := String(entry[0])
+		var material_key := String(entry[1])
+		var cache_key := "%s|%s" % [kind, material_key]
+		if not built.has(cache_key):
+			built[cache_key] = _bind_materials(MeshFactory.item_shape(kind), [material_key])
+		_meshes["item_%s" % item_id] = built[cache_key]
+
+
+## Mesh for the inventory inspection view.
+func item_mesh(item_id: String) -> Mesh:
+	return _meshes.get("item_%s" % item_id, _meshes.get("crate"))
 
 
 func _build_creature_meshes() -> void:

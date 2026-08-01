@@ -1,0 +1,36 @@
+[gd_scene load_steps=5 format=3]
+
+[ext_resource type="Script" path="res://scripts/player/player.gd" id="1_player"]
+
+[sub_resource type="CapsuleShape3D" id="CapsuleShape3D_body"]
+radius = 0.34
+height = 1.72
+
+[sub_resource type="CylinderShape3D" id="CylinderShape3D_ceiling"]
+radius = 0.3
+height = 0.2
+
+[node name="Player" type="CharacterBody3D"]
+collision_layer = 4
+collision_mask = 67
+floor_max_angle = 0.959931
+floor_snap_length = 0.4
+script = ExtResource("1_player")
+
+[node name="Collider" type="CollisionShape3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.86, 0)
+shape = SubResource("CapsuleShape3D_body")
+
+[node name="Head" type="Node3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.56, 0)
+
+[node name="Camera" type="Camera3D" parent="Head"]
+near = 0.05
+far = 800.0
+fov = 75.0
+
+[node name="CeilingProbe" type="ShapeCast3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.1, 0)
+shape = SubResource("CylinderShape3D_ceiling")
+target_position = Vector3(0, 0.75, 0)
+collision_mask = 3

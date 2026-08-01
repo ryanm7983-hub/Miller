@@ -169,5 +169,9 @@ lights_and_shadows/positional_shadow/atlas_size.mobile=1024
 anti_aliasing/quality/msaa_3d=0
 anti_aliasing/quality/screen_space_aa=0
 environment/defaults/default_clear_color=Color(0.02, 0.024, 0.027, 1)
-occlusion_culling/use_occlusion_culling=true
+# Occlusion culling is compiled out of the Web export template, so enabling it
+# only produces a warning on the platform that needs it most. Visibility is
+# handled instead by the chunk streaming radius, per-ring LOD and distance fog
+# (see docs/systems/RENDERING.md).
+occlusion_culling/use_occlusion_culling=false
 limits/opengl/max_lights_per_object=4

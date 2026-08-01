@@ -36,7 +36,12 @@ func _process(delta: float) -> void:
 	_elapsed += delta
 
 
-func _unhandled_input(event: InputEvent) -> void:
+## Uses `_input` rather than `_unhandled_input`: a Control with the default
+## mouse filter consumes mouse and touch events as GUI input before they ever
+## reach the unhandled stage. That made the title card start on a key press but
+## not on a tap — which is to say, not at all on the platform this game is
+## primarily for.
+func _input(event: InputEvent) -> void:
 	if _started:
 		return
 	var is_gesture: bool = (

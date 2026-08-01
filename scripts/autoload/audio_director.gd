@@ -474,5 +474,9 @@ func unlock_audio() -> void:
 	var index := AudioServer.get_bus_index("Master")
 	if index != -1:
 		AudioServer.set_bus_mute(index, false)
-	play_2d("ui_move", -40.0)
+	# The unlock gesture happens on the title card, *before* the library has
+	# been synthesised, so there may be nothing to play yet. Un-muting the bus
+	# is what actually resumes the context; the silent blip is belt and braces.
+	if has("ui_move"):
+		play_2d("ui_move", -40.0)
 	Log.info("audio", "audio context unlocked")
