@@ -1,0 +1,94 @@
+name: Build and publish the web build
+
+# Builds the HTML5 export from source and publishes it to GitHub Pages.
+#
+# The build is reproducible from the repository alone — the project ships no
+# binary assets, so all this needs is the engine and its web export template.
+#
+# `configure-pages` runs with `enablement: true`, which turns Pages on for the
+# repository the first time this workflow succeeds. If the repository is
+# private, Pages requires a paid plan and this step will fail with a clear
+# message rather than silently producing nothing.
+
+on:
+  push:
+    branches:
+      - main
+      - master
+      - claude/black-pine-horror-game-kjajt2
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Never run two deploys at once, but do not cancel a run that is mid-publish.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+env:
+  GODOT_VERSION: 4.6-stable
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Cache the engine and export templates
+        id: engine-cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/godot
+            ~/.local/share/godot/export_templates
+          key: godot-${{ env.GODOT_VERSION }}
+
+      - name: Fetch Godot
+        if: steps.engine-cache.outputs.cache-hit != 'true'
+        run: |
+          set -euo pipefail
+          BASE="https://github.com/godotengine/godot/releases/download/${GODOT_VERSION}"
+          mkdir -p ~/godot
+          curl -fsSL -o /tmp/godot.zip "${BASE}/Godot_v${GODOT_VERSION}_linux.x86_64.zip"
+          unzip -q /tmp/godot.zip -d ~/godot
+          mv ~/godot/Godot_v${GODOT_VERSION}_linux.x86_64 ~/godot/godot
+          chmod +x ~/godot/godot
+
+          curl -fsSL -o /tmp/templates.tpz "${BASE}/Godot_v${GODOT_VERSION}_export_templates.tpz"
+          mkdir -p ~/.local/share/godot/export_templates
+          unzip -q /tmp/templates.tpz -d /tmp/tpl
+          mv /tmp/tpl/templates ~/.local/share/godot/export_templates/${GODOT_VERSION//-/.}
+
+      - name: Import assets
+        run: ~/godot/godot --headless --path . --import
+
+      - name: Run the test suite
+        run: ~/godot/godot --headless --path . res://scenes/test/test_runner.tscn
+
+      - name: Export the web build
+        run: |
+          mkdir -p build/web
+          ~/godot/godot --headless --path . --export-release "Web" build/web/index.html
+          test -s build/web/index.wasm
+
+      - name: Configure Pages
+        uses: actions/configure-pages@v5
+        with:
+          enablement: true
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: build/web
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
