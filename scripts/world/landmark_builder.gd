@@ -110,7 +110,7 @@ func _structure(parent: Node3D, size: Vector3, position: Vector3, material_key: 
 
 	var collider := CollisionShape3D.new()
 	var shape := ConcavePolygonShape3D.new()
-	shape.set_faces(shell.get_faces())
+	shape.set_faces(MeshFactory.collision_faces(shell))
 	collider.shape = shape
 	collider.position = Vector3(0, size.y * 0.5, 0)
 	body.add_child(collider)
@@ -218,7 +218,7 @@ func _build_tower(root: Node3D) -> void:
 	body.collision_layer = 2
 	var collider := CollisionShape3D.new()
 	var shape := ConcavePolygonShape3D.new()
-	shape.set_faces(tower.get_faces())
+	shape.set_faces(MeshFactory.collision_faces(tower))
 	collider.shape = shape
 	body.add_child(collider)
 	root.add_child(body)

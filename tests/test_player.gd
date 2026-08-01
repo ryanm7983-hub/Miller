@@ -290,3 +290,89 @@ func test_movement_speeds_are_ordered() -> void:
 	assert_true(Player.CROUCH_SPEED < Player.WALK_SPEED)
 	assert_true(Player.WALK_SPEED < Player.SPRINT_SPEED)
 	assert_true(Player.CROUCH_HEIGHT < Player.STAND_HEIGHT)
+
+
+# ---------------------------------------------------------------------------
+# Falling out of the world
+#
+# Reported from a real session: "I fall through the ground every time I load
+# in." The player is spawned before the terrain beneath it exists — priming
+# builds that afterwards, a chunk per frame — and a CharacterBody3D with gravity
+# does not wait. Terrain collision is a concave trimesh with no inside, so once
+# through it there is nothing left to land on and the run starts underneath the
+# world. Both halves of the fix are covered here: the controller must be able to
+# stand still while the ground is built, and it must climb back out if it ever
+# does end up below the world anyway.
+# ---------------------------------------------------------------------------
+
+func test_a_suspended_player_does_not_fall() -> void:
+	var player := _make_player()
+	player.set_simulating(false)
+	player.global_position = Vector3(0, 500, 0)   # nothing underneath, by design
+
+	for i in 120:
+		player._physics_process(1.0 / 60.0)
+
+	assert_almost(player.global_position.y, 500.0, 0.001,
+			"a suspended player fell %.2f m while the world was still loading"
+			% (500.0 - player.global_position.y))
+	assert_almost(player.velocity.y, 0.0, 0.001, "a suspended player accumulated gravity")
+	player.free()
+
+
+func test_a_running_player_does_fall() -> void:
+	# The guard above has to be doing something specific, not disabling physics.
+	var player := _make_player()
+	player.global_position = Vector3(0, 500, 0)
+
+	for i in 60:
+		player._physics_process(1.0 / 60.0)
+
+	assert_true(player.global_position.y < 499.0,
+			"gravity never applied, so the suspension test proves nothing")
+	player.free()
+
+
+func test_a_player_under_the_world_climbs_back_out() -> void:
+	var generator := WorldGenerator.new(20260801)
+	generator.build()
+	var world := WorldRoot.new()
+	world.generator = generator
+	tree.root.add_child(world)
+
+	var player := _make_player()
+	player.setup(world)
+	var spawn := generator.spawn_point()
+	# Below the terrain and falling, which is exactly where the bug left it.
+	player.global_position = Vector3(spawn.x, spawn.y - 120.0, spawn.z)
+
+	var surface := generator.height_at(spawn.x, spawn.z)
+	# Just past the recovery threshold. Running much longer would only measure
+	# the player falling again, since this test has no collision geometry.
+	for i in int(Player.FALL_RECOVERY_TIME * 60.0) + 2:
+		player._physics_process(1.0 / 60.0)
+
+	assert_true(player.global_position.y > surface,
+			"the player is still %.1f m below the surface after %.0f s of falling"
+			% [surface - player.global_position.y, Player.FALL_RECOVERY_TIME])
+	assert_almost(player.global_position.y, surface + 1.2, 0.5,
+			"recovery did not put the player on the ground")
+	world.free()
+	player.free()
+
+
+## Recovery must not fire on any drop the basin can actually produce — the
+## whole 300 m of relief, taken as one uninterrupted fall.
+func test_recovery_does_not_fire_on_a_survivable_fall() -> void:
+	var relief := 300.0
+	var gravity := float(ProjectSettings.get_setting("physics/3d/default_gravity", 18.0))
+	var time_to_fall := sqrt(2.0 * relief / gravity)
+	assert_true(Player.FALL_RECOVERY_TIME > time_to_fall,
+			"falling the height of the basin takes %.1f s, but recovery fires at %.1f s"
+			% [time_to_fall, Player.FALL_RECOVERY_TIME])
+
+
+func _make_player() -> Player:
+	var player: Player = load("res://scenes/player/player.tscn").instantiate()
+	tree.root.add_child(player)
+	return player

@@ -198,3 +198,52 @@ func _pcm_stats(stream: AudioStreamWAV) -> Dictionary:
 		"peak": peak,
 		"rms": sqrt(sum_squares / maxf(float(counted), 1.0)),
 	}
+
+
+# ---------------------------------------------------------------------------
+# Collision winding
+# ---------------------------------------------------------------------------
+
+## The asymmetry that cost this project its ground: the vertex order that makes
+## a surface render facing up makes it *collide* facing down. Pinned with a
+## physics query rather than an assertion about vertex order, because the vertex
+## order is only interesting for what the physics server does with it.
+func test_collision_faces_are_wound_the_way_physics_reads_them() -> void:
+	var st := SurfaceTool.new()
+	st.begin(Mesh.PRIMITIVE_TRIANGLES)
+	# A quad that renders facing upwards, wound exactly as the terrain is.
+	var a := Vector3(-5, 0, -5)
+	var b := Vector3(-5, 0, 5)
+	var c := Vector3(5, 0, 5)
+	var d := Vector3(5, 0, -5)
+	for point in [a, b, c, a, c, d]:
+		st.add_vertex(point)
+	st.generate_normals()
+	var mesh := st.commit()
+
+	var raw_hits: bool = await _ray_hits_from_above(mesh.get_faces())
+	var wound_hits: bool = await _ray_hits_from_above(MeshFactory.collision_faces(mesh))
+	assert_false(raw_hits,
+			"raw mesh winding already collides from above, so collision_faces() "
+			+ "is now flipping correct data")
+	assert_true(wound_hits,
+			"collision_faces() does not produce a surface you can stand on")
+
+
+func _ray_hits_from_above(faces: PackedVector3Array) -> bool:
+	var body := StaticBody3D.new()
+	body.collision_layer = 1
+	var shape := ConcavePolygonShape3D.new()
+	shape.set_faces(faces)
+	var collider := CollisionShape3D.new()
+	collider.shape = shape
+	body.add_child(collider)
+	tree.root.add_child(body)
+	body.global_position = Vector3(0, 0, 0)
+	await tree.physics_frame
+	await tree.physics_frame
+	var query := PhysicsRayQueryParameters3D.create(Vector3(0, 20, 0), Vector3(0, -20, 0))
+	query.collision_mask = 1
+	var hit := tree.root.world_3d.direct_space_state.intersect_ray(query)
+	body.free()
+	return not hit.is_empty()

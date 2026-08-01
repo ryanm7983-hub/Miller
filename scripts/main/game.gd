@@ -11,7 +11,9 @@ extends Node3D
 ## Startup order is load-bearing:
 ##   assets -> world layout -> player spawn -> chunk priming -> fade in
 ## Priming before the fade is what stops the player looking at a hole in the
-## ground on the first frame.
+## ground on the first frame. The player is suspended across the whole of it:
+## it is spawned before the terrain under it is built, and a CharacterBody3D
+## left running would simply fall through the gap and keep going.
 
 const AUTOSAVE_INTERVAL := 180.0
 
@@ -57,6 +59,10 @@ func _start() -> void:
 	add_child(world)
 
 	player = preload("res://scenes/player/player.tscn").instantiate()
+	# Frozen before it can take a single physics step. The terrain under the
+	# spawn point does not exist yet — priming builds it below — and gravity does
+	# not wait to be told that.
+	player.set_simulating(false)
 	add_child(player)
 	world.build(player)
 	player.setup(world)
@@ -95,6 +101,9 @@ func _start() -> void:
 
 	await world.prime_around(player.global_position, func(fraction: float) -> void:
 		hud.set_loading_progress(fraction))
+
+	# There is ground now.
+	player.set_simulating(true)
 
 	_loading = false
 	hud.finish_loading()

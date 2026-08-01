@@ -238,3 +238,87 @@ func _loaded_coords() -> Array:
 		if child is TerrainChunk:
 			coords.append(child.coord)
 	return coords
+
+
+# ---------------------------------------------------------------------------
+# Collision
+#
+# Reported from a real session: "I fall through the ground every time I load
+# in." The terrain collider was built by handing the ground mesh's winding
+# straight to `ConcavePolygonShape3D`, which takes the opposite winding to the
+# renderer for the same facing. The shape existed, sat at the right position,
+# held the right number of triangles and raised no error — its front faces
+# simply pointed downwards, and Godot culls backfaces in collision, so
+# everything fell through a world that looked completely solid.
+#
+# The lesson for these tests: asserting that a collider *exists* proves nothing.
+# The only thing that proves ground is ground is a physics query hitting it.
+# ---------------------------------------------------------------------------
+
+func test_terrain_is_solid_from_above() -> void:
+	var spawn := _generator.spawn_point()
+	var manager := ChunkManager.new()
+	var tracker := Node3D.new()
+	tree.root.add_child(tracker)
+	tracker.global_position = spawn
+	tree.root.add_child(manager)
+	manager.setup(_generator, tracker)
+	manager.prime(spawn)
+	await tree.physics_frame
+	await tree.physics_frame
+
+	var space := tree.root.world_3d.direct_space_state
+	# The spawn itself, plus points spread across neighbouring chunks so a single
+	# lucky triangle cannot carry the test.
+	var samples: Array[Vector2] = [Vector2(spawn.x, spawn.z)]
+	for i in 12:
+		var angle := float(i) * 0.9
+		var radius := 12.0 + float(i) * 9.0
+		samples.append(Vector2(spawn.x + cos(angle) * radius, spawn.z + sin(angle) * radius))
+
+	for point: Vector2 in samples:
+		var expected := _generator.height_at(point.x, point.y)
+		var query := PhysicsRayQueryParameters3D.create(
+				Vector3(point.x, expected + 60.0, point.y),
+				Vector3(point.x, expected - 60.0, point.y))
+		query.collision_mask = 1
+		var hit := space.intersect_ray(query)
+		assert_false(hit.is_empty(),
+				"nothing to stand on at (%.0f, %.0f) — a ray straight down passed "
+				% [point.x, point.y] + "through terrain that renders as solid")
+		if not hit.is_empty():
+			# Collision is a coarser grid than the visible mesh, so it is allowed
+			# to differ — but only by a step of that grid, not by a storey.
+			var surface: float = (hit["position"] as Vector3).y
+			assert_true(absf(surface - expected) < 4.0,
+					"collision at (%.0f, %.0f) sits %.1f m from the visible ground"
+					% [point.x, point.y, surface - expected])
+
+	manager.free()
+	tracker.free()
+
+
+func test_the_spawn_point_has_ground_under_it() -> void:
+	# The specific case the player meets first, and the one that was broken.
+	var spawn := _generator.spawn_point()
+	var manager := ChunkManager.new()
+	var tracker := Node3D.new()
+	tree.root.add_child(tracker)
+	tracker.global_position = spawn
+	tree.root.add_child(manager)
+	manager.setup(_generator, tracker)
+	manager.prime(spawn)
+	await tree.physics_frame
+	await tree.physics_frame
+
+	var query := PhysicsRayQueryParameters3D.create(spawn, spawn + Vector3.DOWN * 400.0)
+	query.collision_mask = 1
+	var hit := tree.root.world_3d.direct_space_state.intersect_ray(query)
+	assert_false(hit.is_empty(), "the player spawns over a hole")
+	if not hit.is_empty():
+		var drop: float = spawn.y - (hit["position"] as Vector3).y
+		assert_true(drop < 6.0,
+				"the spawn point is %.1f m above the ground it lands on" % drop)
+
+	manager.free()
+	tracker.free()

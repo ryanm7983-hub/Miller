@@ -5,6 +5,49 @@ not obvious, why.
 
 ---
 
+## Post-release — the ground was never solid
+
+"I fall through the ground every time I load in."
+
+`ConcavePolygonShape3D` takes the opposite triangle winding to the renderer for
+the same facing. The terrain collider was built by emitting the ground mesh's
+winding directly, so its front faces pointed *downwards* — and Godot culls
+backfaces during collision. The result passed every check a person would think
+to make: the collider existed, sat at the right world position, held the right
+1536 vertices, matched the visible surface, and raised no error. A ray straight
+down through it hit nothing at all. The basin has never had a floor.
+
+Two other places had the same line — `shape.set_faces(mesh.get_faces())`, the
+obvious one — so building shells and the fire tower were not solid either.
+
+**Fixed**
+
+- Terrain collision triangles are wound for the physics server rather than the
+  renderer, with the asymmetry spelled out where the winding is chosen.
+- `MeshFactory.collision_faces()` is now the only supported way to turn a mesh
+  into collision geometry, and the two landmark colliders go through it.
+- The player is suspended for the whole of the loading screen. It is spawned
+  before the terrain under it is built — priming builds that afterwards, a chunk
+  per frame — and gravity does not wait to be told. This was a second,
+  independent way to end up under the world, and it would have survived the
+  winding fix on a slow enough device.
+- Falling with no floor for six seconds now returns the player to the surface.
+  Streaming creates and destroys the ground under a standing player, and any gap
+  in that drops them out of a world they cannot get back into. Six seconds is
+  ~320 m of free fall, past the basin's entire 300 m of relief, so nothing
+  reachable triggers it.
+
+**The testing lesson**
+
+`test_near_chunks_get_collision_and_far_chunks_do_not` passed throughout. It
+asserted that a collider *exists*. Existence was never the problem. The new
+tests cast rays and require a hit — `test_terrain_is_solid_from_above`,
+`test_the_spawn_point_has_ground_under_it`, and a unit test that pins the
+winding asymmetry itself by building both variants and firing a ray at each.
+All three fail on the previous code.
+
+---
+
 ## Post-release — playing it locally, and a dead-looking button
 
 "I just want to play the game local as an HTML5" — a fair ask that the project

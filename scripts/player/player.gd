@@ -43,6 +43,12 @@ const BOB_FREQUENCY := 1.9
 const BOB_AMPLITUDE := 0.055
 const LOOK_PITCH_LIMIT := 1.45
 
+## Seconds of unbroken falling after which the player is taken to have left the
+## world rather than jumped off something. Six seconds is roughly 320 m of free
+## fall, comfortably past the basin's 300 m of total relief, so nothing reachable
+## can trigger it — while a fall through the terrain never ends.
+const FALL_RECOVERY_TIME := 6.0
+
 signal hide_state_changed(hidden: bool)
 
 @onready var head: Node3D = $Head
@@ -55,6 +61,16 @@ var input: PlayerInput
 var flashlight: Flashlight
 var interactor: Interactor
 
+## False while the world streams in around the spawn point.
+##
+## A CharacterBody3D with gravity does not wait for the ground to exist. Chunk
+## collision only appears when its chunk is built, and priming the ring around
+## the spawn takes seconds — long enough on a slow machine for the player to
+## fall past terrain that has not been created yet. Terrain collision is a
+## concave trimesh with no inside, so once through it there is nothing left to
+## land on, and the run begins underneath the world.
+var is_simulating: bool = true
+
 var is_crouching: bool = false
 var is_sprinting: bool = false
 var is_hidden: bool = false
@@ -66,6 +82,7 @@ var _yaw := 0.0
 var _pitch := 0.0
 var _bob_phase := 0.0
 var _step_accumulator := 0.0
+var _airborne_time := 0.0
 var _target_height := STAND_HEIGHT
 var _base_fov := 75.0
 var _hide_volumes: int = 0
@@ -118,6 +135,34 @@ func spawn_at(position: Vector3, yaw: float) -> void:
 	EventBus.player_spawned.emit(self)
 
 
+## Suspend or resume the controller. Suspended, the body does not move at all —
+## no gravity, no input, no stat drain — which is what the loading screen needs
+## and what a cutscene would need.
+func set_simulating(value: bool) -> void:
+	is_simulating = value
+	if not value:
+		velocity = Vector3.ZERO
+	_airborne_time = 0.0
+
+
+## Put the player back on the terrain at their current position.
+##
+## Deliberately uses the generator rather than a downward raycast: the reason to
+## be here at all is that the collision geometry was missing or was passed
+## through, so asking the physics world where the ground is would be asking the
+## thing that just failed.
+func recover_to_surface() -> void:
+	if _world == null or _world.generator == null:
+		return
+	var surface := _world.generator.height_at(global_position.x, global_position.z)
+	global_position = Vector3(global_position.x, surface + 1.2, global_position.z)
+	velocity = Vector3.ZERO
+	_airborne_time = 0.0
+	_fall_speed = 0.0
+	_was_on_floor = true
+	Log.warn("player", "fell out of the world; recovered to %v" % global_position)
+
+
 func restore_from_state() -> void:
 	stats.load_from(GameState.player_vitals)
 	spawn_at(GameState.player_position, GameState.player_yaw)
@@ -134,6 +179,8 @@ func write_to_state() -> void:
 # ---------------------------------------------------------------------------
 
 func _physics_process(delta: float) -> void:
+	if not is_simulating:
+		return
 	if not stats.is_alive:
 		_apply_gravity(delta)
 		move_and_slide()
@@ -231,6 +278,18 @@ func _apply_movement(delta: float) -> void:
 		_apply_gravity(delta)
 	_was_on_floor = on_floor
 	_fall_speed = minf(_fall_speed, velocity.y) if not on_floor else 0.0
+
+	# Last line of defence. Streaming means the ground under the player is
+	# created and destroyed while they stand on it, and any gap in that — a
+	# chunk retired a frame early, a spawn that beat its terrain — drops them
+	# out of the world with no way back. Falling for this long is not something
+	# the basin can otherwise produce.
+	if on_floor:
+		_airborne_time = 0.0
+	else:
+		_airborne_time += delta
+		if _airborne_time >= FALL_RECOVERY_TIME:
+			recover_to_surface()
 
 	move_and_slide()
 

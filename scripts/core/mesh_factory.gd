@@ -16,6 +16,34 @@ extends RefCounted
 ## All builders return an ArrayMesh with normals and tangents generated.
 
 # ---------------------------------------------------------------------------
+# Collision
+# ---------------------------------------------------------------------------
+
+## Triangles from `mesh`, wound for `ConcavePolygonShape3D`.
+##
+## The renderer and the collision shape disagree about which winding faces
+## which way, so `shape.set_faces(mesh.get_faces())` — the obvious line, and the
+## one this project had in three places — builds a collider whose front faces
+## point *into* the geometry. Godot culls backfaces during collision, so the
+## result is a shape that is present, correctly positioned, has the right vertex
+## count, reports no error, and lets everything fall straight through it. The
+## terrain looked solid for weeks that way.
+##
+## Anything handing mesh triangles to a collision shape must go through here.
+static func collision_faces(mesh: Mesh) -> PackedVector3Array:
+	var source := mesh.get_faces()
+	var out := PackedVector3Array()
+	out.resize(source.size())
+	var i := 0
+	while i + 2 < source.size():
+		out[i] = source[i]
+		out[i + 1] = source[i + 2]
+		out[i + 2] = source[i + 1]
+		i += 3
+	return out
+
+
+# ---------------------------------------------------------------------------
 # Low level primitive helpers
 # ---------------------------------------------------------------------------
 

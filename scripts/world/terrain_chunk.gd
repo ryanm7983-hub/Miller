@@ -152,8 +152,15 @@ func _build_collision() -> void:
 			var p10 := Vector3(x1, _generator.height_at(origin.x + x1, origin.z + z0), z0)
 			var p01 := Vector3(x0, _generator.height_at(origin.x + x0, origin.z + z1), z1)
 			var p11 := Vector3(x1, _generator.height_at(origin.x + x1, origin.z + z1), z1)
-			faces[cursor] = p00; faces[cursor + 1] = p01; faces[cursor + 2] = p11
-			faces[cursor + 3] = p00; faces[cursor + 4] = p11; faces[cursor + 5] = p10
+			# Wound opposite to the visual mesh above, which is not a mistake:
+			# `ConcavePolygonShape3D` takes the reverse winding to the renderer
+			# for the same facing. Emitting the render order here produces a
+			# surface whose front faces point *down*, and Godot culls backfaces
+			# in collision — so the ground looks solid, reports a valid shape
+			# with the right vertex count in the right place, and everything
+			# falls straight through it.
+			faces[cursor] = p00; faces[cursor + 1] = p11; faces[cursor + 2] = p01
+			faces[cursor + 3] = p00; faces[cursor + 4] = p10; faces[cursor + 5] = p11
 			cursor += 6
 
 	var shape := ConcavePolygonShape3D.new()
