@@ -1,6 +1,23 @@
 import { useMemo } from 'react';
 import { CheckIcon, ExternalIcon } from './Icons.jsx';
 import { money, relativeTime } from '../lib/format.js';
+import { retailerColor, retailerInitials } from '../lib/retailers.js';
+
+/**
+ * Retailer mark. The colour is the retailer's own — the same one its line uses
+ * on the history chart — so the two views teach each other.
+ */
+function RetailerMark({ retailer, size = 'h-8 w-8 text-[11px]' }) {
+  return (
+    <span
+      className={`${size} inline-grid shrink-0 place-items-center rounded-lg font-bold text-white`}
+      style={{ background: retailerColor(retailer) }}
+      aria-hidden="true"
+    >
+      {retailerInitials(retailer)}
+    </span>
+  );
+}
 
 /**
  * Price comparison, cheapest total first. Cards on phones, a table from `sm`
@@ -36,18 +53,26 @@ export function OfferList({ offers = [] }) {
       {/* Mobile: stacked cards */}
       <ul className="divide-y divide-line sm:hidden">
         {sorted.map((offer) => (
-          <li key={offer.id} className={`p-4 ${offer.inStock ? '' : 'opacity-60'}`}>
+          <li
+            key={offer.id}
+            className={`p-4 ${offer.inStock ? '' : 'opacity-60'} ${
+              offer.isBestDeal ? 'bg-good/6' : ''
+            }`}
+          >
             <div className="flex items-start justify-between gap-3">
-              <div className="min-w-0">
-                <p className="flex items-center gap-2 font-semibold text-ink">
-                  {offer.retailer}
-                  {offer.isBestDeal && <BestDealChip />}
-                </p>
-                <p className="mt-0.5 text-xs text-ink-2">
-                  {offer.shippingCents === 0 ? 'Free shipping' : `+${money(offer.shippingCents)} shipping`}
-                  {offer.deliveryEstimate ? ` · ${offer.deliveryEstimate}` : ''}
-                </p>
-                <ConditionNote offer={offer} />
+              <div className="flex min-w-0 gap-2.5">
+                <RetailerMark retailer={offer.retailer} />
+                <div className="min-w-0">
+                  <p className="flex flex-wrap items-center gap-2 font-semibold text-ink">
+                    {offer.retailer}
+                    {offer.isBestDeal && <BestDealChip />}
+                  </p>
+                  <p className="mt-0.5 text-xs text-ink-2">
+                    {offer.shippingCents === 0 ? 'Free shipping' : `+${money(offer.shippingCents)} shipping`}
+                    {offer.deliveryEstimate ? ` · ${offer.deliveryEstimate}` : ''}
+                  </p>
+                  <ConditionNote offer={offer} />
+                </div>
               </div>
               <div className="shrink-0 text-right">
                 <p className="tabular text-lg font-bold text-ink">{money(offer.totalCents)}</p>
@@ -76,11 +101,19 @@ export function OfferList({ offers = [] }) {
           </thead>
           <tbody className="divide-y divide-line">
             {sorted.map((offer) => (
-              <tr key={offer.id} className={offer.inStock ? '' : 'opacity-60'}>
+              <tr
+                key={offer.id}
+                className={`${offer.inStock ? '' : 'opacity-60'} ${
+                  offer.isBestDeal ? 'bg-good/6' : ''
+                }`}
+              >
                 <th scope="row" className="px-5 py-3 font-semibold text-ink">
-                  <span className="flex flex-wrap items-center gap-2">
-                    {offer.retailer}
-                    {offer.isBestDeal && <BestDealChip />}
+                  <span className="flex items-center gap-2.5">
+                    <RetailerMark retailer={offer.retailer} size="h-7 w-7 text-[10px]" />
+                    <span className="flex flex-wrap items-center gap-2">
+                      {offer.retailer}
+                      {offer.isBestDeal && <BestDealChip />}
+                    </span>
                   </span>
                   <ConditionNote offer={offer} />
                 </th>

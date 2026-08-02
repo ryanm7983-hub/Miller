@@ -1,0 +1,4 @@
+{
+  "images": {},
+  "note": "Populated by `npm run images` (scripts/fetch-product-images.mjs). Empty by default: product photographs belong to their retailers and manufacturers, so they are fetched on your machine rather than committed here. Until then the app draws its own product illustrations."
+}

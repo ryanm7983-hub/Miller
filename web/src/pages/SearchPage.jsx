@@ -212,11 +212,16 @@ function ResultCard({ result }) {
     <li>
       <Link
         to={`/product/${product.id}`}
-        className="card flex items-start gap-3 p-3 transition-colors hover:bg-surface-2 sm:p-4"
+        className="card flex items-start gap-3.5 p-3 transition-colors hover:bg-surface-2 sm:gap-4 sm:p-4"
       >
-        <ProductImage product={product} className="h-16 w-16 shrink-0 sm:h-20 sm:w-20" />
+        <ProductImage product={product} className="h-20 w-20 shrink-0 sm:h-24 sm:w-24" />
 
         <div className="min-w-0 flex-1">
+          {product.brand && (
+            <p className="text-[10px] font-semibold tracking-wider text-muted uppercase">
+              {product.brand}
+            </p>
+          )}
           <p className="line-clamp-2 text-sm font-semibold text-ink sm:text-base">{product.title}</p>
           <p className="mt-0.5 text-xs text-muted">
             {offerCount} {offerCount === 1 ? 'retailer' : 'retailers'}
@@ -242,10 +247,10 @@ function ResultCard({ result }) {
         </div>
 
         <div className="shrink-0 text-right">
-          <p className="tabular text-lg font-bold text-ink sm:text-xl">
+          <p className="tabular text-base font-bold text-ink sm:text-xl">
             {money(bestOffer?.totalCents)}
           </p>
-          <p className="text-[11px] text-muted">total</p>
+          <p className="text-[10px] text-muted">total</p>
         </div>
       </Link>
     </li>

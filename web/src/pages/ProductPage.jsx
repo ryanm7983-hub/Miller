@@ -1,6 +1,6 @@
 import { lazy, Suspense, useCallback, useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import { ProductImage } from '../components/ProductImage.jsx';
+import { ProductHero } from '../components/ProductImage.jsx';
 import { PriceStats } from '../components/PriceStats.jsx';
 import { OfferList } from '../components/OfferList.jsx';
 
@@ -98,17 +98,25 @@ export function ProductPage() {
 
   return (
     <div className="space-y-4">
-      <article className="card p-4 sm:p-5">
-        <div className="flex gap-4">
-          <ProductImage product={product} className="h-20 w-20 shrink-0 sm:h-28 sm:w-28" />
+      <article className="card overflow-hidden">
+        <div className="flex flex-col gap-4 p-4 sm:flex-row sm:items-center sm:gap-5 sm:p-5">
+          <ProductHero
+            product={product}
+            className="h-44 w-full shrink-0 sm:h-40 sm:w-40"
+          />
           <div className="min-w-0 flex-1">
-            <h1 className="text-lg leading-snug font-bold text-ink sm:text-xl">{product.title}</h1>
-            <p className="mt-1 text-xs text-muted">
-              {[product.brand, product.model, product.upc && `UPC ${product.upc}`]
-                .filter(Boolean)
-                .join(' · ')}
+            {product.brand && (
+              <p className="text-[11px] font-semibold tracking-wider text-muted uppercase">
+                {product.brand}
+              </p>
+            )}
+            <h1 className="mt-0.5 text-xl leading-snug font-bold tracking-tight text-ink text-balance sm:text-2xl">
+              {product.title}
+            </h1>
+            <p className="mt-1.5 text-xs text-muted">
+              {[product.model, product.upc && `UPC ${product.upc}`].filter(Boolean).join(' · ')}
             </p>
-            <div className="mt-2 flex flex-wrap items-center gap-2">
+            <div className="mt-3 flex flex-wrap items-center gap-2">
               {product.isMock && (
                 <span className="chip bg-surface-2 text-muted ring-1 ring-line">sample data</span>
               )}

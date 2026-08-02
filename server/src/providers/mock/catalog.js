@@ -16,6 +16,8 @@ export const SAMPLE_PRODUCTS = [
     category: 'Headphones',
     basePriceCents: 39800,
     retailers: ['Amazon', 'Best Buy', 'Walmart', 'Target', 'eBay', 'B&H Photo'],
+    artKind: 'headphones',
+    artPalette: 'charcoal',
   },
   {
     slug: 'airpods-pro-2-usbc',
@@ -26,6 +28,8 @@ export const SAMPLE_PRODUCTS = [
     category: 'Headphones',
     basePriceCents: 24900,
     retailers: ['Amazon', 'Walmart', 'Target', 'Best Buy', 'Costco'],
+    artKind: 'earbuds',
+    artPalette: 'white',
   },
   {
     slug: 'switch-oled',
@@ -36,6 +40,8 @@ export const SAMPLE_PRODUCTS = [
     category: 'Gaming',
     basePriceCents: 34999,
     retailers: ['Amazon', 'Walmart', 'Target', 'Best Buy', 'eBay'],
+    artKind: 'console',
+    artPalette: 'slate',
   },
   {
     slug: 'lg-c4-55',
@@ -46,6 +52,8 @@ export const SAMPLE_PRODUCTS = [
     category: 'Televisions',
     basePriceCents: 129699,
     retailers: ['Amazon', 'Best Buy', 'Walmart', 'Costco', 'B&H Photo'],
+    artKind: 'tv',
+    artPalette: 'ink',
   },
   {
     slug: 'dyson-v15-detect',
@@ -56,6 +64,8 @@ export const SAMPLE_PRODUCTS = [
     category: 'Home',
     basePriceCents: 74999,
     retailers: ['Amazon', 'Target', 'Best Buy', 'Walmart', 'eBay'],
+    artKind: 'vacuum',
+    artPalette: 'violet',
   },
   {
     slug: 'instant-pot-duo-6qt',
@@ -66,6 +76,8 @@ export const SAMPLE_PRODUCTS = [
     category: 'Kitchen',
     basePriceCents: 9995,
     retailers: ['Amazon', 'Walmart', 'Target', 'Costco'],
+    artKind: 'cooker',
+    artPalette: 'steel',
   },
   {
     slug: 'anker-737-powerbank',
@@ -76,6 +88,8 @@ export const SAMPLE_PRODUCTS = [
     category: 'Accessories',
     basePriceCents: 14999,
     retailers: ['Amazon', 'Walmart', 'Best Buy', 'eBay', 'Newegg'],
+    artKind: 'powerbank',
+    artPalette: 'ink',
   },
   {
     slug: 'ninja-creami',
@@ -86,6 +100,8 @@ export const SAMPLE_PRODUCTS = [
     category: 'Kitchen',
     basePriceCents: 22999,
     retailers: ['Amazon', 'Target', 'Walmart', 'Costco', 'eBay'],
+    artKind: 'dessert',
+    artPalette: 'ink',
   },
   {
     slug: 'samsung-990-pro-2tb',
@@ -96,6 +112,8 @@ export const SAMPLE_PRODUCTS = [
     category: 'Computer Components',
     basePriceCents: 16999,
     retailers: ['Amazon', 'Newegg', 'Best Buy', 'Walmart', 'B&H Photo'],
+    artKind: 'ssd',
+    artPalette: 'ink',
   },
   {
     slug: 'kindle-paperwhite-2024',
@@ -106,6 +124,8 @@ export const SAMPLE_PRODUCTS = [
     category: 'E-Readers',
     basePriceCents: 15999,
     retailers: ['Amazon', 'Best Buy', 'Target', 'eBay'],
+    artKind: 'ereader',
+    artPalette: 'slate',
   },
   {
     slug: 'bose-qc-ultra',
@@ -116,6 +136,8 @@ export const SAMPLE_PRODUCTS = [
     category: 'Headphones',
     basePriceCents: 42900,
     retailers: ['Amazon', 'Best Buy', 'Target', 'Walmart', 'eBay'],
+    artKind: 'headphones',
+    artPalette: 'silver',
   },
   {
     slug: 'roomba-j7-plus',
@@ -126,6 +148,8 @@ export const SAMPLE_PRODUCTS = [
     category: 'Home',
     basePriceCents: 59999,
     retailers: ['Amazon', 'Target', 'Best Buy', 'Costco', 'eBay'],
+    artKind: 'robot',
+    artPalette: 'copper',
   },
 ];
 

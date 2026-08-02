@@ -15,3 +15,7 @@ server/data/*.db-wal
 .DS_Store
 .vscode/
 .idea/
+
+# Product photos fetched by `npm run images` — they belong to the retailers
+# and manufacturers who shot them, so they are not committed.
+web/public/products/

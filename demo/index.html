@@ -313,12 +313,50 @@
     font-size: 11.5px;
   }
 
+  /* Product photography is shot on white, so the tile stays light in both
+     themes — a dark tile would frame every product in a bright box. */
   .thumb {
+    position: relative;
     display: grid; place-items: center;
-    background: var(--surface-2);
+    background: #f4f3f0;
     border: 1px solid var(--line);
     border-radius: 12px;
-    font-weight: 700; color: var(--ink-2);
+    overflow: hidden;
+    flex-shrink: 0;
+    padding: 8%;
+  }
+  .thumb > svg, .thumb > img { width: 100%; height: 100%; object-fit: contain; display: block; }
+
+  .thumb-hero {
+    border-radius: 16px;
+    padding: 9%;
+    background: radial-gradient(120% 90% at 50% 0%, #ffffff 0%, #f5f4f1 55%, #e8e6e1 100%);
+  }
+  .thumb-hero::after {
+    content: '';
+    position: absolute; left: 50%; bottom: 9%;
+    width: 46%; height: 10px;
+    transform: translateX(-50%);
+    background: rgba(0, 0, 0, 0.15);
+    border-radius: 50%;
+    filter: blur(7px);
+    z-index: 0;
+  }
+  .thumb-hero > svg, .thumb-hero > img { position: relative; z-index: 1; }
+
+  .product-head { display: flex; flex-direction: column; gap: 14px; }
+  .product-head-img { width: 100%; height: 190px; }
+  @media (min-width: 600px) {
+    .product-head { flex-direction: row; align-items: center; gap: 18px; }
+    .product-head-img { width: 160px; height: 160px; flex-shrink: 0; }
+  }
+
+  .retailer-mark {
+    display: grid; place-items: center;
+    width: 32px; height: 32px;
+    border-radius: 9px;
+    color: #fff;
+    font-size: 11px; font-weight: 700;
     flex-shrink: 0;
   }
 
@@ -457,18 +495,18 @@
   const DAY_MS = 86_400_000;
 
   const CATALOG = [
-    { slug: 'sony-wh1000xm5', title: 'Sony WH-1000XM5 Wireless Noise-Cancelling Headphones', brand: 'Sony', model: 'WH-1000XM5', upc: '027242923004', category: 'Headphones', base: 39800, retailers: ['Amazon', 'Best Buy', 'Walmart', 'Target', 'eBay', 'B&H Photo'] },
-    { slug: 'airpods-pro-2-usbc', title: 'Apple AirPods Pro (2nd Generation, USB-C)', brand: 'Apple', model: 'MTJV3AM/A', upc: '195949052248', category: 'Headphones', base: 24900, retailers: ['Amazon', 'Walmart', 'Target', 'Best Buy', 'Costco'] },
-    { slug: 'switch-oled', title: 'Nintendo Switch OLED Model — White Joy-Con', brand: 'Nintendo', model: 'HEG-001', upc: '045496882730', category: 'Gaming', base: 34999, retailers: ['Amazon', 'Walmart', 'Target', 'Best Buy', 'eBay'] },
-    { slug: 'lg-c4-55', title: 'LG C4 55" OLED evo 4K Smart TV (2024)', brand: 'LG', model: 'OLED55C4PUA', upc: '195174059227', category: 'Televisions', base: 129699, retailers: ['Amazon', 'Best Buy', 'Walmart', 'Costco', 'B&H Photo'] },
-    { slug: 'dyson-v15-detect', title: 'Dyson V15 Detect Cordless Vacuum Cleaner', brand: 'Dyson', model: 'V15 Detect', upc: '885609020235', category: 'Home', base: 74999, retailers: ['Amazon', 'Target', 'Best Buy', 'Walmart', 'eBay'] },
-    { slug: 'instant-pot-duo-6qt', title: 'Instant Pot Duo 7-in-1 Electric Pressure Cooker, 6 Quart', brand: 'Instant Pot', model: 'Duo 60', upc: '810028580657', category: 'Kitchen', base: 9995, retailers: ['Amazon', 'Walmart', 'Target', 'Costco'] },
-    { slug: 'anker-737-powerbank', title: 'Anker 737 Power Bank (PowerCore 24K, 140W)', brand: 'Anker', model: 'A1289', upc: '194644092887', category: 'Accessories', base: 14999, retailers: ['Amazon', 'Walmart', 'Best Buy', 'eBay', 'Newegg'] },
-    { slug: 'ninja-creami', title: 'Ninja CREAMi 7-in-1 Ice Cream & Frozen Dessert Maker', brand: 'Ninja', model: 'NC301', upc: '622356565509', category: 'Kitchen', base: 22999, retailers: ['Amazon', 'Target', 'Walmart', 'Costco', 'eBay'] },
-    { slug: 'samsung-990-pro-2tb', title: 'Samsung 990 PRO 2TB PCIe 4.0 NVMe M.2 SSD', brand: 'Samsung', model: 'MZ-V9P2T0B/AM', upc: '887276613666', category: 'Computer Components', base: 16999, retailers: ['Amazon', 'Newegg', 'Best Buy', 'Walmart', 'B&H Photo'] },
-    { slug: 'kindle-paperwhite-2024', title: 'Amazon Kindle Paperwhite (16 GB, 2024)', brand: 'Amazon', model: 'PW12', upc: '840268952679', category: 'E-Readers', base: 15999, retailers: ['Amazon', 'Best Buy', 'Target', 'eBay'] },
-    { slug: 'bose-qc-ultra', title: 'Bose QuietComfort Ultra Wireless Headphones', brand: 'Bose', model: '880066-0100', upc: '017817846455', category: 'Headphones', base: 42900, retailers: ['Amazon', 'Best Buy', 'Target', 'Walmart', 'eBay'] },
-    { slug: 'roomba-j7-plus', title: 'iRobot Roomba j7+ Self-Emptying Robot Vacuum', brand: 'iRobot', model: 'j7550', upc: '885155023452', category: 'Home', base: 59999, retailers: ['Amazon', 'Target', 'Best Buy', 'Costco', 'eBay'] },
+    { slug: 'sony-wh1000xm5', title: 'Sony WH-1000XM5 Wireless Noise-Cancelling Headphones', brand: 'Sony', model: 'WH-1000XM5', upc: '027242923004', category: 'Headphones', base: 39800, retailers: ['Amazon', 'Best Buy', 'Walmart', 'Target', 'eBay', 'B&H Photo'], artKind: 'headphones', artPalette: 'charcoal' },
+    { slug: 'airpods-pro-2-usbc', title: 'Apple AirPods Pro (2nd Generation, USB-C)', brand: 'Apple', model: 'MTJV3AM/A', upc: '195949052248', category: 'Headphones', base: 24900, retailers: ['Amazon', 'Walmart', 'Target', 'Best Buy', 'Costco'], artKind: 'earbuds', artPalette: 'white' },
+    { slug: 'switch-oled', title: 'Nintendo Switch OLED Model — White Joy-Con', brand: 'Nintendo', model: 'HEG-001', upc: '045496882730', category: 'Gaming', base: 34999, retailers: ['Amazon', 'Walmart', 'Target', 'Best Buy', 'eBay'], artKind: 'console', artPalette: 'slate' },
+    { slug: 'lg-c4-55', title: 'LG C4 55" OLED evo 4K Smart TV (2024)', brand: 'LG', model: 'OLED55C4PUA', upc: '195174059227', category: 'Televisions', base: 129699, retailers: ['Amazon', 'Best Buy', 'Walmart', 'Costco', 'B&H Photo'], artKind: 'tv', artPalette: 'ink' },
+    { slug: 'dyson-v15-detect', title: 'Dyson V15 Detect Cordless Vacuum Cleaner', brand: 'Dyson', model: 'V15 Detect', upc: '885609020235', category: 'Home', base: 74999, retailers: ['Amazon', 'Target', 'Best Buy', 'Walmart', 'eBay'], artKind: 'vacuum', artPalette: 'violet' },
+    { slug: 'instant-pot-duo-6qt', title: 'Instant Pot Duo 7-in-1 Electric Pressure Cooker, 6 Quart', brand: 'Instant Pot', model: 'Duo 60', upc: '810028580657', category: 'Kitchen', base: 9995, retailers: ['Amazon', 'Walmart', 'Target', 'Costco'], artKind: 'cooker', artPalette: 'steel' },
+    { slug: 'anker-737-powerbank', title: 'Anker 737 Power Bank (PowerCore 24K, 140W)', brand: 'Anker', model: 'A1289', upc: '194644092887', category: 'Accessories', base: 14999, retailers: ['Amazon', 'Walmart', 'Best Buy', 'eBay', 'Newegg'], artKind: 'powerbank', artPalette: 'ink' },
+    { slug: 'ninja-creami', title: 'Ninja CREAMi 7-in-1 Ice Cream & Frozen Dessert Maker', brand: 'Ninja', model: 'NC301', upc: '622356565509', category: 'Kitchen', base: 22999, retailers: ['Amazon', 'Target', 'Walmart', 'Costco', 'eBay'], artKind: 'dessert', artPalette: 'ink' },
+    { slug: 'samsung-990-pro-2tb', title: 'Samsung 990 PRO 2TB PCIe 4.0 NVMe M.2 SSD', brand: 'Samsung', model: 'MZ-V9P2T0B/AM', upc: '887276613666', category: 'Computer Components', base: 16999, retailers: ['Amazon', 'Newegg', 'Best Buy', 'Walmart', 'B&H Photo'], artKind: 'ssd', artPalette: 'ink' },
+    { slug: 'kindle-paperwhite-2024', title: 'Amazon Kindle Paperwhite (16 GB, 2024)', brand: 'Amazon', model: 'PW12', upc: '840268952679', category: 'E-Readers', base: 15999, retailers: ['Amazon', 'Best Buy', 'Target', 'eBay'], artKind: 'ereader', artPalette: 'slate' },
+    { slug: 'bose-qc-ultra', title: 'Bose QuietComfort Ultra Wireless Headphones', brand: 'Bose', model: '880066-0100', upc: '017817846455', category: 'Headphones', base: 42900, retailers: ['Amazon', 'Best Buy', 'Target', 'Walmart', 'eBay'], artKind: 'headphones', artPalette: 'silver' },
+    { slug: 'roomba-j7-plus', title: 'iRobot Roomba j7+ Self-Emptying Robot Vacuum', brand: 'iRobot', model: 'j7550', upc: '885155023452', category: 'Home', base: 59999, retailers: ['Amazon', 'Target', 'Best Buy', 'Costco', 'eBay'], artKind: 'robot', artPalette: 'copper' },
   ];
 
   const RETAILERS = {
@@ -483,6 +521,254 @@
   };
 
   const DEFAULT_RETAILERS = ['Amazon', 'Walmart', 'Target', 'Best Buy', 'eBay'];
+
+  /* ==== PRODUCT ART — generated, do not edit here ==== */
+  /**
+   * Product illustrations.
+   *
+   * Sample-data products have no photograph, and a two-letter monogram tells you
+   * nothing about what you're buying. These are hand-drawn SVGs — one per product
+   * shape, in matched colourways — so a search result reads as *headphones* or *a
+   * robot vacuum* at a glance.
+   *
+   * Real photographs always win: when a live provider returns a thumbnail, the UI
+   * shows that and never reaches for these.
+   *
+   * Everything is a plain string so the same source can be inlined in the
+   * standalone demo (`demo/index.html`), which has no build step.
+   * Colours are literal, not themed — a black headphone is black in both themes.
+   */
+
+  /** Colourways, roughly matching each product's real finish. */
+  const PALETTES = {
+    charcoal: { body: '#33363d', dark: '#1e2025', light: '#4d515a', trim: '#8e939c' },
+    silver: { body: '#c6cad1', dark: '#9aa0a9', light: '#e6e9ee', trim: '#7c828c' },
+    /* Deliberately a shade darker than the real finish: pure white disappears
+       against the light image tile. */
+    white: { body: '#d7dbe2', dark: '#a8aeb8', light: '#fbfcfd', trim: '#7c828c' },
+    slate: { body: '#4a5160', dark: '#2f3542', light: '#68707f', trim: '#a8aeb9' },
+    violet: { body: '#6d5aa8', dark: '#4d3f7d', light: '#8a78c4', trim: '#c9c0e4' },
+    steel: { body: '#b3b9c2', dark: '#868d97', light: '#d9dde2', trim: '#5c626b' },
+    ink: { body: '#25272c', dark: '#141519', light: '#3a3d44', trim: '#6f747d' },
+    copper: { body: '#3b3d44', dark: '#25272c', light: '#54575f', trim: '#c98a5b' },
+    teal: { body: '#2b6b6b', dark: '#1d4c4c', light: '#3d8a8a', trim: '#9fd0cc' },
+  };
+
+  const shell = (children) =>
+    `<svg viewBox="0 0 96 96" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">${children}</svg>`;
+
+  /**
+   * Each drawing is a function of its palette, so the same shape ships in
+   * several finishes (matte-black and silver headphones, for instance).
+   */
+  const SHAPES = {
+    headphones: (c) => shell(`
+      <path d="M22 62V47a26 26 0 0 1 52 0v15" stroke="${c.body}" stroke-width="9" stroke-linecap="round"/>
+      <rect x="10" y="52" width="22" height="32" rx="10" fill="${c.body}"/>
+      <rect x="64" y="52" width="22" height="32" rx="10" fill="${c.dark}"/>
+      <rect x="15" y="58" width="12" height="20" rx="6" fill="${c.light}"/>
+      <rect x="69" y="58" width="12" height="20" rx="6" fill="${c.light}" opacity=".7"/>
+    `),
+
+    earbuds: (c) => shell(`
+      <rect x="22" y="48" width="52" height="36" rx="14" fill="${c.body}"/>
+      <path d="M22 62a14 14 0 0 1 0-14v14z" fill="${c.dark}" opacity=".25"/>
+      <path d="M23 60h50" stroke="${c.trim}" stroke-width="2" opacity=".55"/>
+      <circle cx="48" cy="71" r="3" fill="${c.trim}" opacity=".5"/>
+      <g>
+        <circle cx="36" cy="26" r="10" fill="${c.light}"/>
+        <path d="M32 34h8v10a4 4 0 0 1-8 0z" fill="${c.light}"/>
+        <circle cx="36" cy="26" r="4" fill="${c.trim}" opacity=".45"/>
+        <path d="M32 34h8v3h-8z" fill="${c.dark}" opacity=".18"/>
+      </g>
+      <g>
+        <circle cx="61" cy="30" r="8.5" fill="${c.light}"/>
+        <path d="M57.5 37h7v8.5a3.5 3.5 0 0 1-7 0z" fill="${c.light}"/>
+        <circle cx="61" cy="30" r="3.4" fill="${c.trim}" opacity=".45"/>
+        <path d="M57.5 37h7v2.6h-7z" fill="${c.dark}" opacity=".18"/>
+      </g>
+    `),
+
+    console: (c) => shell(`
+      <rect x="12" y="24" width="16" height="48" rx="8" fill="${c.trim}"/>
+      <rect x="68" y="24" width="16" height="48" rx="8" fill="${c.trim}"/>
+      <rect x="26" y="26" width="44" height="44" rx="5" fill="${c.dark}"/>
+      <rect x="30" y="30" width="36" height="36" rx="3" fill="${c.light}" opacity=".55"/>
+      <circle cx="20" cy="38" r="4" fill="${c.body}"/>
+      <circle cx="76" cy="58" r="4" fill="${c.body}"/>
+      <circle cx="76" cy="38" r="2.6" fill="${c.body}"/>
+      <circle cx="20" cy="58" r="2.6" fill="${c.body}"/>
+    `),
+
+    tv: (c) => shell(`
+      <rect x="8" y="20" width="80" height="48" rx="4" fill="${c.body}"/>
+      <rect x="11" y="23" width="74" height="40" rx="2" fill="${c.dark}"/>
+      <path d="M11 55 32 38l14 11 16-14 23 18v6a2 2 0 0 1-2 2H13a2 2 0 0 1-2-2z" fill="${c.light}" opacity=".5"/>
+      <circle cx="66" cy="32" r="5" fill="${c.trim}" opacity=".5"/>
+      <rect x="42" y="68" width="12" height="8" fill="${c.trim}"/>
+      <rect x="30" y="76" width="36" height="5" rx="2.5" fill="${c.body}"/>
+    `),
+
+    vacuum: (c) => shell(`
+      <rect x="52" y="14" width="30" height="22" rx="11" fill="${c.body}"/>
+      <circle cx="67" cy="25" r="7" fill="${c.trim}" opacity=".6"/>
+      <path d="M56 34 34 66" stroke="${c.dark}" stroke-width="8" stroke-linecap="round"/>
+      <path d="M45 22h10v10H45z" fill="${c.dark}" opacity=".8"/>
+      <path d="M14 72a6 6 0 0 1 6-6h22a6 6 0 0 1 6 6v6a4 4 0 0 1-4 4H18a4 4 0 0 1-4-4z" fill="${c.light}"/>
+      <rect x="18" y="76" width="26" height="4" rx="2" fill="${c.dark}" opacity=".55"/>
+    `),
+
+    cooker: (c) => shell(`
+      <rect x="22" y="34" width="52" height="42" rx="8" fill="${c.body}"/>
+      <path d="M22 60h52v8a8 8 0 0 1-8 8H30a8 8 0 0 1-8-8z" fill="${c.dark}" opacity=".75"/>
+      <rect x="18" y="76" width="60" height="6" rx="3" fill="${c.dark}"/>
+      <rect x="26" y="40" width="44" height="15" rx="4" fill="${c.dark}"/>
+      <rect x="30" y="45" width="20" height="5" rx="2.5" fill="${c.trim}" opacity=".85"/>
+      <circle cx="62" cy="47.5" r="3" fill="${c.trim}" opacity=".7"/>
+      <rect x="20" y="24" width="56" height="10" rx="5" fill="${c.light}"/>
+      <rect x="41" y="14" width="14" height="11" rx="5.5" fill="${c.dark}"/>
+      <path d="M48 8v7" stroke="${c.trim}" stroke-width="3" stroke-linecap="round"/>
+    `),
+
+    powerbank: (c) => shell(`
+      <rect x="28" y="14" width="40" height="68" rx="10" fill="${c.body}"/>
+      <rect x="35" y="24" width="26" height="18" rx="4" fill="${c.dark}"/>
+      <rect x="39" y="30" width="18" height="6" rx="3" fill="${c.trim}"/>
+      <rect x="36" y="52" width="10" height="6" rx="2" fill="${c.dark}"/>
+      <rect x="50" y="52" width="10" height="6" rx="2" fill="${c.dark}"/>
+      <rect x="38" y="66" width="20" height="3" rx="1.5" fill="${c.light}" opacity=".6"/>
+    `),
+
+    dessert: (c) => shell(`
+      <rect x="18" y="74" width="60" height="8" rx="4" fill="${c.dark}"/>
+      <rect x="20" y="16" width="20" height="58" rx="7" fill="${c.body}"/>
+      <rect x="24" y="24" width="12" height="16" rx="3" fill="${c.trim}" opacity=".55"/>
+      <path d="M38 18h30a5 5 0 0 1 5 5v9a5 5 0 0 1-5 5H38z" fill="${c.body}"/>
+      <rect x="52" y="37" width="6" height="8" fill="${c.dark}" opacity=".8"/>
+      <path d="M44 52h32l-4 20a4 4 0 0 1-4 3H52a4 4 0 0 1-4-3z" fill="${c.light}"/>
+      <path d="M55 52c0-4 2-6 5-6s5 2 5 6z" fill="${c.trim}"/>
+      <path d="M50 52c1-7 5-11 10-11s9 4 10 11z" fill="${c.light}" opacity=".9"/>
+      <circle cx="60" cy="40" r="4" fill="${c.trim}" opacity=".85"/>
+    `),
+
+    ssd: (c) => shell(`
+      <rect x="8" y="40" width="80" height="18" rx="3" fill="${c.body}"/>
+      <rect x="8" y="43" width="12" height="12" rx="2" fill="${c.trim}"/>
+      <path d="M14 43v12M17 43v12M11 43v12" stroke="${c.dark}" stroke-width="1.2" opacity=".6"/>
+      <rect x="26" y="44" width="16" height="10" rx="1.5" fill="${c.light}" opacity=".7"/>
+      <rect x="46" y="44" width="16" height="10" rx="1.5" fill="${c.light}" opacity=".7"/>
+      <rect x="66" y="44" width="14" height="10" rx="1.5" fill="${c.dark}"/>
+    `),
+
+    ereader: (c) => shell(`
+      <rect x="26" y="12" width="44" height="72" rx="6" fill="${c.body}"/>
+      <rect x="31" y="18" width="34" height="54" rx="2" fill="${c.light}"/>
+      <path d="M36 28h24M36 35h24M36 42h18M36 49h24M36 56h14" stroke="${c.trim}" stroke-width="2.5" stroke-linecap="round" opacity=".65"/>
+      <rect x="42" y="76" width="12" height="3" rx="1.5" fill="${c.dark}" opacity=".5"/>
+    `),
+
+    robot: (c) => shell(`
+      <circle cx="48" cy="50" r="34" fill="${c.body}"/>
+      <path d="M14 50a34 34 0 0 1 68 0z" fill="${c.light}" opacity=".35"/>
+      <path d="M17 62a34 34 0 0 0 62 0z" fill="${c.dark}" opacity=".45"/>
+      <circle cx="48" cy="40" r="9" fill="${c.dark}"/>
+      <circle cx="48" cy="40" r="4" fill="${c.trim}"/>
+      <rect x="30" y="64" width="36" height="6" rx="3" fill="${c.dark}" opacity=".7"/>
+    `),
+
+    /** Fallback for anything we can't classify. */
+    box: (c) => shell(`
+      <path d="M48 14 82 30v36L48 82 14 66V30z" fill="${c.body}"/>
+      <path d="M48 14 82 30 48 46 14 30z" fill="${c.light}"/>
+      <path d="M48 46v36L14 66V30z" fill="${c.dark}" opacity=".55"/>
+      <path d="M31 22 65 38v12" stroke="${c.trim}" stroke-width="3" stroke-linecap="round" opacity=".6"/>
+    `),
+  };
+
+  /** Keyword → shape, used when a product has no explicit art assigned. */
+  const KEYWORD_SHAPES = [
+    // Earbuds first: they are usually filed under a "Headphones" category, so the
+    // broader rule below would otherwise claim them.
+    [/earbud|airpod|in-ear|\bbuds\b/i, ['earbuds', 'white']],
+    [/headphone|headset|over-ear|noise.?cancel/i, ['headphones', 'charcoal']],
+    [/switch|console|handheld|gaming|playstation|xbox|steam deck/i, ['console', 'slate']],
+    [/\btv\b|television|oled|qled|smart tv|monitor|display/i, ['tv', 'ink']],
+    [/robot vacuum|roomba|robovac/i, ['robot', 'copper']],
+    [/vacuum|cleaner|dyson/i, ['vacuum', 'violet']],
+    [/pressure cooker|instant pot|air fryer|slow cooker|rice cooker/i, ['cooker', 'steel']],
+    [/ice cream|creami|blender|mixer|frozen dessert/i, ['dessert', 'ink']],
+    [/ssd|nvme|hard drive|storage|m\.2|memory/i, ['ssd', 'ink']],
+    [/kindle|e-?reader|paperwhite|tablet|ipad/i, ['ereader', 'slate']],
+    [/power bank|powercore|battery|charger/i, ['powerbank', 'ink']],
+    [/speaker|soundbar|audio/i, ['headphones', 'ink']],
+  ];
+
+  /**
+   * Brand-led finishes, so two products of the same shape don't come out
+   * identical — Bose headphones are silver where Sony's are matte black.
+   */
+  const PALETTE_HINTS = [
+    [/\bbose\b|\bsilver\b|\bwhite\b/i, 'silver'],
+    [/\bapple\b|airpods/i, 'white'],
+    [/\bsony\b|matte black|\bblack\b/i, 'charcoal'],
+  ];
+
+  /**
+   * Picks a drawing for a product. An explicit `artKind` wins; otherwise the
+   * title and category are matched on keywords, which is what live provider
+   * results (no art fields, but a descriptive title) rely on.
+   *
+   * @param {{ artKind?: string, artPalette?: string, title?: string, category?: string, brand?: string }} product
+   * @returns {{ kind: string, palette: string }}
+   */
+  function resolveArt(product = {}) {
+    const haystack = `${product.brand ?? ''} ${product.title ?? ''} ${product.category ?? ''}`;
+
+    if (product.artKind && SHAPES[product.artKind]) {
+      return { kind: product.artKind, palette: product.artPalette ?? 'slate' };
+    }
+
+    for (const [pattern, [kind, palette]] of KEYWORD_SHAPES) {
+      if (!pattern.test(haystack)) continue;
+      const hinted = PALETTE_HINTS.find(([hint]) => hint.test(haystack));
+      return { kind, palette: hinted ? hinted[1] : palette };
+    }
+
+    return { kind: 'box', palette: 'slate' };
+  }
+
+  /**
+   * @param {object} product
+   * @returns {string} Inline SVG markup, sized by its container.
+   */
+  function productArtSvg(product) {
+    const { kind, palette } = resolveArt(product);
+    const draw = SHAPES[kind] ?? SHAPES.box;
+    return draw(PALETTES[palette] ?? PALETTES.slate);
+  }
+  /* ==== END PRODUCT ART ==== */
+
+  /**
+   * Retailer identity. A retailer's colour is fixed to the retailer, so its
+   * badge in the comparison table and its line on the chart always match.
+   */
+  const KNOWN_RETAILERS = ['Amazon', 'Walmart', 'Target', 'Best Buy', 'eBay', 'B&H Photo', 'Newegg', 'Costco'];
+
+  function retailerSlot(name) {
+    const normalized = String(name ?? '').toLowerCase().replace(/\.(com|co\.uk|ca)$/, '').trim();
+    const index = KNOWN_RETAILERS.findIndex((known) => known.toLowerCase() === normalized);
+    if (index >= 0) return index + 1;
+    return (seedFrom(normalized) % 8) + 1;
+  }
+
+  const retailerColor = (name) => 'var(--s' + retailerSlot(name) + ')';
+
+  function retailerInitials(name) {
+    const words = String(name ?? '?').replace(/&/g, ' ').split(/\s+/).filter(Boolean);
+    if (words.length > 1) return words.slice(0, 2).map((word) => word[0]).join('').toUpperCase();
+    const word = words[0] ?? '?';
+    return (word[0] + (word[1] ?? '')).replace(/^./, (c) => c.toUpperCase());
+  }
 
   /** cyrb53 — a fast, deterministic string hash (stands in for the server's sha1). */
   function hashStr(str) {
@@ -809,9 +1095,34 @@
     return Math.round(hours / 24) + 'd ago';
   }
 
-  function initials(entry) {
-    const words = String(entry.brand || entry.title || '?').split(/\s+/).filter(Boolean);
-    return (words.length > 1 ? words.slice(0, 2).map((w) => w[0]).join('') : words[0].slice(0, 2)).toUpperCase();
+  /**
+   * Product imagery: the real photograph when a listing has one, otherwise a
+   * drawing of that kind of product. Sample data has no photographs, so the
+   * drawings are what you see here — but a search result still reads as
+   * *headphones* rather than as two initials.
+   */
+  function productImage(entry, size, options) {
+    const opts = options || {};
+    const tile = el('div', {
+      class: 'thumb' + (opts.hero ? ' thumb-hero' : '') + (opts.class ? ' ' + opts.class : ''),
+      style: size ? 'width:' + size + ';height:' + size : '',
+    });
+    if (entry && entry.imageUrl) {
+      tile.appendChild(el('img', { src: entry.imageUrl, alt: '', loading: 'lazy', referrerpolicy: 'no-referrer' }));
+    } else {
+      tile.innerHTML = productArtSvg(entry || {});
+    }
+    return tile;
+  }
+
+  /** Retailer mark — the colour matches that retailer's line on the chart. */
+  function retailerMark(retailer, size) {
+    return el('span', {
+      class: 'retailer-mark',
+      style: 'background:' + retailerColor(retailer) + (size ? ';width:' + size + ';height:' + size : ''),
+      'aria-hidden': 'true',
+      text: retailerInitials(retailer),
+    });
   }
 
   function parseMoney(input) {
@@ -900,12 +1211,15 @@
     return { low, high, ticks };
   }
 
+  /**
+   * Colour follows the retailer, never its rank — and it is the same colour
+   * the retailer wears on its badge in the comparison table, so the legend is
+   * learnable and changing the date range repaints nothing.
+   */
   function retailerColors(entry) {
     const list = (entry.retailers || DEFAULT_RETAILERS).slice().sort();
     const map = {};
-    list.forEach((retailer, index) => {
-      if (index < SERIES_VARS.length) map[retailer] = 'var(' + SERIES_VARS[index] + ')';
-    });
+    for (const retailer of list) map[retailer] = retailerColor(retailer);
     return map;
   }
 
@@ -1281,7 +1595,7 @@
         ]);
 
         list.appendChild(el('button', { class: 'result', type: 'button', onclick: () => openProduct(entry.slug) }, [
-          el('span', { class: 'thumb', style: 'width:60px;height:60px;font-size:15px', text: initials(entry) }),
+          productImage(entry, '76px'),
           el('span', { class: 'grow' }, [
             el('span', { class: 'result-title', text: entry.title }),
             el('span', { class: 'xs muted', style: 'display:block;margin-top:2px', text: offers.length + ' retailers' + (best ? ' · cheapest at ' + best.retailer : '') }),
@@ -1319,7 +1633,7 @@
           el('div', { class: 'stack-sm' }, viewed.map((entry) => el('button', {
             class: 'result', type: 'button', style: 'align-items:center', onclick: () => openProduct(entry.slug),
           }, [
-            el('span', { class: 'thumb', style: 'width:44px;height:44px;font-size:13px', text: initials(entry) }),
+            productImage(entry, '48px'),
             el('span', { class: 'grow sm', style: 'font-weight:600', text: entry.title }),
           ]))),
         ]));
@@ -1401,11 +1715,14 @@
 
     // Header
     wrap.appendChild(el('article', { class: 'card pad' }, [
-      el('div', { class: 'row', style: 'align-items:flex-start;gap:14px' }, [
-        el('span', { class: 'thumb', style: 'width:76px;height:76px;font-size:19px', text: initials(entry) }),
+      el('div', { class: 'product-head' }, [
+        productImage(entry, null, { hero: true, class: 'product-head-img' }),
         el('div', { class: 'grow stack-sm' }, [
-          el('h1', { style: 'font-size:19px;line-height:1.3', text: entry.title }),
-          el('p', { class: 'xs muted', text: [entry.brand, entry.model, entry.upc ? 'UPC ' + entry.upc : null].filter(Boolean).join(' · ') }),
+          el('div', {}, [
+            entry.brand ? el('p', { class: 'micro', style: 'margin-bottom:2px', text: entry.brand }) : null,
+            el('h1', { style: 'font-size:21px;line-height:1.25', text: entry.title }),
+          ]),
+          el('p', { class: 'xs muted', text: [entry.model, entry.upc ? 'UPC ' + entry.upc : null].filter(Boolean).join(' · ') }),
           el('div', { class: 'row wrap', style: 'gap:6px' }, [chip('sample data'), chip('checked just now', null, 'clock')]),
         ]),
       ]),
@@ -1473,15 +1790,19 @@
 
     const mobile = el('div', { class: 'offers-mobile' });
     for (const offer of offers) {
-      mobile.appendChild(el('div', { class: 'offer-row', style: offer.inStock ? '' : 'opacity:0.6' }, [
+      const rowStyle = (offer.inStock ? '' : 'opacity:0.6;') + (offer === bestOffer ? 'background:var(--good-wash);' : '');
+      mobile.appendChild(el('div', { class: 'offer-row', style: rowStyle }, [
         el('div', { class: 'row-between', style: 'align-items:flex-start' }, [
-          el('div', { class: 'grow' }, [
-            el('div', { class: 'row wrap', style: 'gap:8px' }, [
-              el('span', { style: 'font-weight:650', text: offer.retailer }),
-              offer === bestOffer ? chip('Best deal', 'good', 'check') : null,
+          el('div', { class: 'row grow', style: 'align-items:flex-start;gap:10px' }, [
+            retailerMark(offer.retailer),
+            el('div', { class: 'grow' }, [
+              el('div', { class: 'row wrap', style: 'gap:8px' }, [
+                el('span', { style: 'font-weight:650', text: offer.retailer }),
+                offer === bestOffer ? chip('Best deal', 'good', 'check') : null,
+              ]),
+              el('p', { class: 'xs ink-2', style: 'margin-top:2px', text: (offer.shippingCents === 0 ? 'Free shipping' : '+' + money(offer.shippingCents) + ' shipping') + ' · ' + offer.delivery }),
+              conditionNote(offer),
             ]),
-            el('p', { class: 'xs ink-2', style: 'margin-top:2px', text: (offer.shippingCents === 0 ? 'Free shipping' : '+' + money(offer.shippingCents) + ' shipping') + ' · ' + offer.delivery }),
-            conditionNote(offer),
           ]),
           el('div', { style: 'text-align:right' }, [
             el('p', { class: 'tabular', style: 'font-size:18px;font-weight:700', text: money(offer.totalCents) }),
@@ -1493,11 +1814,16 @@
     }
     section.appendChild(mobile);
 
-    const rows = offers.map((offer) => el('tr', { style: offer.inStock ? '' : 'opacity:0.6' }, [
+    const rows = offers.map((offer) => el('tr', {
+      style: (offer.inStock ? '' : 'opacity:0.6;') + (offer === bestOffer ? 'background:var(--good-wash);' : ''),
+    }, [
       el('th', { scope: 'row' }, [
-        el('div', { class: 'row wrap', style: 'gap:8px' }, [
-          el('span', { text: offer.retailer }),
-          offer === bestOffer ? chip('Best deal', 'good', 'check') : null,
+        el('div', { class: 'row', style: 'gap:10px' }, [
+          retailerMark(offer.retailer, '28px'),
+          el('div', { class: 'row wrap', style: 'gap:8px' }, [
+            el('span', { text: offer.retailer }),
+            offer === bestOffer ? chip('Best deal', 'good', 'check') : null,
+          ]),
         ]),
         conditionNote(offer),
       ]),
@@ -1707,7 +2033,7 @@
 
       list.appendChild(el('div', { class: 'card pad' }, [
         el('div', { class: 'row', style: 'align-items:flex-start;gap:12px' }, [
-          el('button', { class: 'thumb', type: 'button', style: 'width:56px;height:56px;font-size:14px;cursor:pointer', text: initials(entry), 'aria-label': 'Open ' + entry.title, onclick: () => openProduct(slug) }),
+          el('button', { type: 'button', style: 'background:none;border:0;padding:0;cursor:pointer', 'aria-label': 'Open ' + entry.title, onclick: () => openProduct(slug) }, [productImage(entry, '60px')]),
           el('div', { class: 'grow' }, [
             el('button', {
               class: 'result-title', type: 'button',

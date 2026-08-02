@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from 'react';
+import { useMemo, useState } from 'react';
 import {
   CartesianGrid,
   Line,
@@ -11,6 +11,7 @@ import {
   YAxis,
 } from 'recharts';
 import { longDate, money, moneyShort, shortDate } from '../lib/format.js';
+import { retailerColor } from '../lib/retailers.js';
 
 const RANGES = [
   { days: 30, label: '30d' },
@@ -18,35 +19,18 @@ const RANGES = [
   { days: 365, label: '1y' },
 ];
 
-/** Validated categorical slots, assigned to retailers in fixed order. */
-const SERIES_SLOTS = [
-  'var(--ps-series-1)',
-  'var(--ps-series-2)',
-  'var(--ps-series-3)',
-  'var(--ps-series-4)',
-  'var(--ps-series-5)',
-  'var(--ps-series-6)',
-  'var(--ps-series-7)',
-  'var(--ps-series-8)',
-];
-const MAX_SERIES = SERIES_SLOTS.length;
+const MAX_SERIES = 8;
 
 /**
- * Colour follows the retailer, never its rank: once a retailer has a slot it
- * keeps it, so changing the date range or hiding a series never repaints the
- * others.
+ * Colour follows the retailer, never its rank — and it is the same colour the
+ * retailer wears everywhere else in the app (see lib/retailers.js), so the
+ * legend is learnable and changing the date range repaints nothing.
  */
 function useRetailerColors(retailers) {
-  const assigned = useRef(new Map());
-  return useMemo(() => {
-    const map = assigned.current;
-    for (const retailer of [...retailers].sort()) {
-      if (!map.has(retailer) && map.size < MAX_SERIES) {
-        map.set(retailer, SERIES_SLOTS[map.size]);
-      }
-    }
-    return new Map(map);
-  }, [retailers]);
+  return useMemo(
+    () => new Map(retailers.map((retailer) => [retailer, retailerColor(retailer)])),
+    [retailers],
+  );
 }
 
 const NICE_STEPS_CENTS = [100, 200, 250, 500, 1000, 2000, 2500, 5000, 10_000, 20_000, 25_000, 50_000];

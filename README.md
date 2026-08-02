@@ -33,6 +33,7 @@ Open http://localhost:5173 and sign in as `demo@pricescout.app` / `demo1234`.
 |---|---|
 | `npm run dev` | API + web dev server together |
 | `npm run seed` | Reset-safe sample catalog, history and demo user |
+| `npm run images` | Download real product photos for the sample catalog (see below) |
 | `npm test` | 50 server tests (providers incl. the live API parsers, pricing math, alert rules, HTTP flow) |
 | `npm run build` | Production build of the PWA into `web/dist` |
 | `npm run serve` | Build, then run the single-service production setup on :4000 |
@@ -53,6 +54,25 @@ Staged as requested — each stage works on its own.
    products, appends snapshots and evaluates alerts.
 4. **Alerts.** In-app notification centre with unread badges; optional email per watch.
 5. **PWA.** Installable, offline shell, cached API reads for pages already visited.
+
+## Product images
+
+Real photographs are always preferred, in this order:
+
+1. **A live provider's photo.** SerpApi returns the actual listing thumbnail; it flows through to
+   search results and the product hero untouched.
+2. **A downloaded photo for the sample catalog** — `npm run images`. With `SERPAPI_KEY` set it pulls
+   the real Google Shopping photo for each sample product; without a key it falls back to Openverse
+   (openly-licensed, credited in the manifest). Images land in `web/public/products/` and are
+   **not committed** — product photography belongs to the retailers and manufacturers who shot it,
+   so fetching it stays your call.
+3. **A drawn illustration** ([`web/src/lib/productArt.js`](web/src/lib/productArt.js)) when there is
+   no photo at all. Shapes are matched to the product — headphones, a robot vacuum, an SSD — from
+   explicit art hints on sample products, or by keyword from the title for live results, so a
+   listing without a photo still reads as the thing you searched for.
+
+The illustrations are inline SVG (about 2 kB for the whole set), so they're sharp at any size and
+work offline. `npm run sync:demo` re-inlines them into the standalone demo after an edit.
 
 ## Data sources
 

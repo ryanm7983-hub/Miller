@@ -1,3 +1,6 @@
+import fs from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { PriceProvider, normalizeOffer } from './PriceProvider.js';
 import { hash, seedFrom, seededRandom } from '../lib/ids.js';
 import {
@@ -7,6 +10,28 @@ import {
 } from './mock/catalog.js';
 
 const DAY_MS = 86_400_000;
+
+/**
+ * Real product photographs, if `npm run images` has been run. Empty by default —
+ * the UI then draws its own illustration for the product instead.
+ */
+const PHOTOS = loadPhotoManifest();
+
+function loadPhotoManifest() {
+  try {
+    const file = path.join(path.dirname(fileURLToPath(import.meta.url)), 'mock/images.json');
+    const manifest = JSON.parse(fs.readFileSync(file, 'utf8'));
+    const count = Object.keys(manifest.images ?? {}).length;
+    if (count > 0) {
+      console.log(`[providers] mock: using ${count} downloaded product photos (${manifest.source})`);
+    }
+    return manifest.images ?? {};
+  } catch {
+    return {};
+  }
+}
+
+const photoFor = (slug) => PHOTOS[slug]?.file ?? null;
 
 function epochDay(date = new Date()) {
   return Math.floor(date.getTime() / DAY_MS);
@@ -125,7 +150,7 @@ export class MockProvider extends PriceProvider {
       model: entry.model,
       upc: entry.upc,
       category: entry.category,
-      imageUrl: null,
+      imageUrl: photoFor(entry.slug),
       url: null,
       payload: entry,
     };
