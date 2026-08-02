@@ -1,0 +1,13 @@
+node_modules
+**/node_modules
+web/dist
+server/data
+.git
+.gitignore
+*.log
+.env
+**/.env
+.DS_Store
+demo
+README.md
+DEPLOY.md

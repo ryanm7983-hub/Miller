@@ -89,8 +89,20 @@ body {
   color: var(--ps-ink);
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
-  /* Room for the fixed bottom nav on small screens + iOS safe area. */
-  overscroll-behavior-y: none;
+  /* `clip` contains stray overflow without making <body> a scroll container
+     the way `hidden` does — that is what breaks momentum scrolling on iOS. */
+  overflow-x: clip;
+  -webkit-tap-highlight-color: transparent;
+}
+
+#root {
+  /* Survives the mobile address bar collapsing. */
+  min-height: 100dvh;
+}
+
+/* Any nested scroll area keeps its swipe to itself. */
+.scroll-area {
+  overscroll-behavior: contain;
 }
 
 @layer components {

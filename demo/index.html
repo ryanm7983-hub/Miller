@@ -101,7 +101,11 @@
     font-size: 15px;
     line-height: 1.5;
     -webkit-font-smoothing: antialiased;
-    overflow-x: hidden;
+    /* `clip` contains stray overflow without making <body> a scroll
+       container the way `hidden` does — that's what breaks momentum
+       scrolling and pull-to-refresh on iOS. */
+    overflow-x: clip;
+    -webkit-tap-highlight-color: transparent;
   }
 
   .tabular { font-variant-numeric: tabular-nums; }
@@ -110,11 +114,15 @@
     max-width: 900px;
     margin: 0 auto;
     min-height: 100vh;
+    min-height: 100dvh; /* survives the mobile address bar collapsing */
     display: flex;
     flex-direction: column;
   }
 
   /* --- chrome --- */
+  /* Both bars are opaque on purpose: a translucent `backdrop-filter` over a
+     scrolling page forces a full-width repaint every frame, which is what
+     makes phone scrolling feel like it's dragging. */
   .topbar {
     position: sticky;
     top: 0;
@@ -124,8 +132,7 @@
     justify-content: space-between;
     gap: 12px;
     padding: 12px 16px;
-    background: color-mix(in srgb, var(--plane) 88%, transparent);
-    backdrop-filter: blur(10px);
+    background: var(--plane);
     border-bottom: 1px solid var(--line);
   }
 
@@ -160,10 +167,12 @@
     position: fixed; inset: auto 0 0 0; z-index: 20;
     display: flex;
     max-width: 900px; margin: 0 auto;
-    background: color-mix(in srgb, var(--plane) 95%, transparent);
-    backdrop-filter: blur(10px);
+    background: var(--plane);
     border-top: 1px solid var(--line);
     padding-bottom: env(safe-area-inset-bottom);
+    /* Promote to its own layer so it doesn't repaint with the page. */
+    will-change: transform;
+    transform: translateZ(0);
   }
 
   .tab {
@@ -388,7 +397,12 @@
   .legend { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: 12px; color: var(--ink-2); }
   .legend span { display: inline-flex; align-items: center; gap: 6px; }
 
-  .history-table { max-height: 280px; overflow: auto; border: 1px solid var(--line); border-radius: 12px; }
+  /* `contain` stops a swipe inside the table from grabbing the page scroll. */
+  .history-table {
+    max-height: 280px; overflow: auto; overscroll-behavior: contain;
+    border: 1px solid var(--line); border-radius: 12px;
+  }
+  .table-scroll { overscroll-behavior-x: contain; }
   .history-table thead th { position: sticky; top: 0; background: var(--surface-2); }
 
   .empty { text-align: center; padding: 32px 16px; color: var(--muted); font-size: 14px; }
@@ -1075,9 +1089,47 @@
       tooltip.setAttribute('data-visible', 'true');
     }
 
-    svg.addEventListener('pointermove', move);
-    svg.addEventListener('pointerdown', move);
-    svg.addEventListener('pointerleave', hide);
+    /*
+     * Touch handling: a vertical swipe that starts on the chart must scroll
+     * the page, not scrub the series. We only engage the readout once a
+     * gesture is clearly horizontal — or on a tap.
+     */
+    let tracking = false;
+    let engaged = false;
+    let startX = 0;
+    let startY = 0;
+
+    svg.addEventListener('pointerdown', (event) => {
+      if (event.pointerType === 'mouse') { move(event); return; }
+      tracking = true;
+      engaged = false;
+      startX = event.clientX;
+      startY = event.clientY;
+    });
+
+    svg.addEventListener('pointermove', (event) => {
+      if (event.pointerType === 'mouse') { move(event); return; }
+      if (!tracking) return;
+      if (!engaged) {
+        const dx = Math.abs(event.clientX - startX);
+        const dy = Math.abs(event.clientY - startY);
+        if (dy > dx && dy > 6) { tracking = false; hide(); return; }
+        if (dx < 6) return;
+        engaged = true;
+      }
+      move(event);
+    });
+
+    svg.addEventListener('pointerup', (event) => {
+      if (event.pointerType === 'mouse') return;
+      if (tracking && !engaged) move(event); // a tap reads that point
+      tracking = false;
+    });
+
+    svg.addEventListener('pointercancel', () => { tracking = false; hide(); });
+    svg.addEventListener('pointerleave', (event) => {
+      if (event.pointerType === 'mouse') hide();
+    });
   }
 
   // =====================================================================

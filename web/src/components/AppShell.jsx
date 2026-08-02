@@ -26,7 +26,10 @@ export function AppShell() {
 
   return (
     <div className="mx-auto flex min-h-full w-full max-w-4xl flex-col">
-      <header className="sticky top-0 z-20 border-b border-line bg-plane/85 backdrop-blur">
+      {/* Both bars are opaque on purpose: a translucent backdrop-blur over a
+          scrolling page repaints full-width every frame, which is what makes
+          phone scrolling feel like it is dragging. */}
+      <header className="sticky top-0 z-20 border-b border-line bg-plane">
         <div className="flex items-center justify-between px-4 py-3">
           <Link to="/" className="flex items-center gap-2">
             <img src="/icon-192.png" alt="" className="h-7 w-7 rounded-lg" />
@@ -61,7 +64,7 @@ export function AppShell() {
       </main>
 
       <nav
-        className="fixed inset-x-0 bottom-0 z-20 border-t border-line bg-plane/95 pb-[env(safe-area-inset-bottom)] backdrop-blur md:hidden"
+        className="fixed inset-x-0 bottom-0 z-20 transform-gpu border-t border-line bg-plane pb-[env(safe-area-inset-bottom)] md:hidden"
         aria-label="Main"
       >
         <ul className="mx-auto flex max-w-4xl">

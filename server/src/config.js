@@ -40,6 +40,22 @@ export const config = {
     tokenTtl: process.env.JWT_TTL ?? '30d',
   },
 
+  /**
+   * In production the API also serves the built PWA, so the whole app is one
+   * service on one origin — no CORS, no second deploy.
+   */
+  static: {
+    enabled: bool(process.env.SERVE_STATIC, isProduction),
+    dir: path.resolve(serverRoot, process.env.STATIC_DIR ?? '../web/dist'),
+  },
+
+  /** Request caps, mainly to stop a runaway client burning paid API quota. */
+  limits: {
+    searchPerMinute: Number(process.env.RATE_LIMIT_SEARCH ?? 20),
+    authPerMinute: Number(process.env.RATE_LIMIT_AUTH ?? 10),
+    trustProxy: bool(process.env.TRUST_PROXY, isProduction),
+  },
+
   providers: {
     enabled: list(process.env.PRICE_PROVIDERS, ['mock']),
     serpApiKey: process.env.SERPAPI_KEY ?? '',

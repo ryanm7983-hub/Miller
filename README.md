@@ -33,9 +33,10 @@ Open http://localhost:5173 and sign in as `demo@pricescout.app` / `demo1234`.
 |---|---|
 | `npm run dev` | API + web dev server together |
 | `npm run seed` | Reset-safe sample catalog, history and demo user |
-| `npm test` | 33 server tests (providers, pricing math, alert rules, HTTP flow) |
+| `npm test` | 50 server tests (providers incl. the live API parsers, pricing math, alert rules, HTTP flow) |
 | `npm run build` | Production build of the PWA into `web/dist` |
-| `npm run refresh --workspace server` | Run the scheduled price check once, now |
+| `npm run serve` | Build, then run the single-service production setup on :4000 |
+| `npm run refresh` | Run the scheduled price check once, now |
 
 ## What's built
 
@@ -125,6 +126,9 @@ All server config lives in `server/.env` ([full list with comments](server/.env.
 | `PRICE_REFRESH_CRON` | `0 */6 * * *` | Standard 5-field cron |
 | `PRICE_REFRESH_BATCH` | `50` | Max products re-quoted per run — caps paid API spend |
 | `MIN_REFRESH_MINUTES` | `60` | Won't re-quote a product more often than this |
+| `SERVE_STATIC` | on in production | Serve `web/dist` from the API, one origin |
+| `RATE_LIMIT_SEARCH` | `20` | Searches per minute per IP — protects your API quota |
+| `TRUST_PROXY` | on in production | Read client IPs from `X-Forwarded-For` |
 | `RESEND_API_KEY` | — | Optional; without it, alerts are in-app only |
 | `MAIL_FROM`, `APP_URL` | — | Sender identity and link base for alert emails |
 
@@ -189,16 +193,29 @@ can't rely on colour. Icons pair with every status colour, so nothing means one 
 
 ## Deploying
 
+The app deploys as **one container** — the API serves the built PWA from the same origin, so there's
+one URL and no CORS to configure.
+
 ```bash
-npm run build                                  # → web/dist (static)
-NODE_ENV=production JWT_SECRET=… npm start     # API + cron
+npm run serve            # build + run exactly as production does, on :4000
+docker build -t pricescout . && docker run -p 4000:4000 -v pricescout-data:/data pricescout
 ```
 
-Serve `web/dist` from any static host and point it at the API. The SQLite file needs a persistent
-volume; for multi-instance deployments, move to Postgres — the queries in
-[`server/src/services/prices.js`](server/src/services/prices.js) are standard SQL apart from
-SQLite's `datetime()`, and only [`server/src/db/index.js`](server/src/db/index.js) opens the
-connection.
+[`render.yaml`](render.yaml) (Render blueprint, disk included) and [`fly.toml`](fly.toml) are
+committed and ready. **[DEPLOY.md](DEPLOY.md)** walks through getting a provider key, budgeting its
+quota, all four hosting options and how to confirm you're on live data.
+
+Two constraints worth knowing up front: SQLite needs a persistent disk, and the price-refresh cron
+runs in-process, so the instance has to stay awake — that rules out serverless and most free tiers.
+For multi-instance, move to Postgres; only [`server/src/db/index.js`](server/src/db/index.js) opens
+the connection.
+
+## Try it without installing anything
+
+[`demo/index.html`](demo/index.html) is the whole UI in a single file with no backend — the mock
+pricing engine ported to the browser, a hand-drawn SVG chart, and watchlist/alerts in local storage.
+Open it directly in a browser. A clock control on the watchlist stands in for the scheduled job so
+you can watch alerts fire.
 
 ## Known limitations
 

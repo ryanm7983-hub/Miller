@@ -13,7 +13,9 @@
     "dev:web": "npm run dev --workspace web",
     "build": "npm run build --workspace web",
     "start": "npm run start --workspace server",
+    "serve": "npm run build && NODE_ENV=production npm start",
     "seed": "npm run seed --workspace server",
+    "refresh": "npm run refresh --workspace server",
     "test": "npm run test --workspace server"
   },
   "devDependencies": {

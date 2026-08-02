@@ -120,7 +120,7 @@ function Legend({ items }) {
 
 function DataTable({ rows, columns }) {
   return (
-    <div className="mt-4 max-h-72 overflow-auto rounded-xl ring-1 ring-line">
+    <div className="scroll-area mt-4 max-h-72 overflow-auto rounded-xl ring-1 ring-line">
       <table className="w-full text-left text-xs">
         <caption className="sr-only">Price history data</caption>
         <thead className="sticky top-0 bg-surface-2 text-ink-2">
@@ -256,7 +256,9 @@ export function PriceHistoryChart({
         </p>
       ) : (
         <>
-          <div className="mt-4 h-56 sm:h-72">
+          {/* pan-y: a vertical swipe starting on the chart scrolls the page
+              instead of scrubbing the series. */}
+          <div className="mt-4 h-56 touch-pan-y sm:h-72">
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={data} margin={{ top: 18, right: 12, bottom: 0, left: 0 }}>
                 <CartesianGrid vertical={false} stroke="var(--ps-line)" strokeWidth={1} />

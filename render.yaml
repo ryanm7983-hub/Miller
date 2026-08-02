@@ -1,0 +1,60 @@
+# Render blueprint — https://render.com/docs/blueprint-spec
+#
+# New > Blueprint > point it at this repo. Render reads this file, builds the
+# Dockerfile, attaches the disk and asks for the values marked `sync: false`.
+#
+# The disk needs a paid instance type (starter and up). On the free tier the
+# service sleeps, which also stops the scheduled price checks.
+services:
+  - type: web
+    name: pricescout
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    plan: starter
+    healthCheckPath: /api/health
+    autoDeploy: true
+
+    disk:
+      name: pricescout-data
+      mountPath: /data
+      sizeGB: 1
+
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 4000
+      - key: DATABASE_FILE
+        value: /data/pricescout.db
+      - key: SERVE_STATIC
+        value: true
+      - key: TRUST_PROXY
+        value: true
+
+      # Signs login tokens. Generated once by Render and never shown to you.
+      - key: JWT_SECRET
+        generateValue: true
+
+      # Data sources. Set SERPAPI_KEY to go live; leave PRICE_PROVIDERS as
+      # `mock` to deploy on sample data first.
+      - key: PRICE_PROVIDERS
+        value: serpapi
+      - key: SERPAPI_KEY
+        sync: false
+
+      # Keep paid-API spend bounded: once a day, 25 products per run.
+      - key: PRICE_REFRESH_CRON
+        value: 0 7 * * *
+      - key: PRICE_REFRESH_BATCH
+        value: 25
+      - key: MIN_REFRESH_MINUTES
+        value: 720
+
+      # Optional email alerts.
+      - key: RESEND_API_KEY
+        sync: false
+      - key: MAIL_FROM
+        sync: false
+      # Your Render URL, e.g. https://pricescout.onrender.com — used in emails.
+      - key: APP_URL
+        sync: false
