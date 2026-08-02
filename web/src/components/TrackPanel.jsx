@@ -1,6 +1,9 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { BookmarkIcon, Spinner, TrashIcon } from './Icons.jsx';
+import { Bell, BellRing, Trash2 } from 'lucide-react';
+import { Card, CardHeader, Checkbox, Field } from './ui/Primitives.jsx';
+import { Button } from './ui/Button.jsx';
+import { useToast } from './ui/Toast.jsx';
 import { money, parseMoneyToCents } from '../lib/format.js';
 import { useAuth } from '../context/AuthContext.jsx';
 import { api } from '../lib/api.js';
@@ -11,13 +14,13 @@ import { api } from '../lib/api.js';
  */
 export function TrackPanel({ product, watch, stats, onChange }) {
   const { user } = useAuth();
+  const toast = useToast();
   const [target, setTarget] = useState('');
   const [emailAlerts, setEmailAlerts] = useState(false);
   const [belowAverage, setBelowAverage] = useState(true);
   const [allTimeLow, setAllTimeLow] = useState(true);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState(null);
-  const [saved, setSaved] = useState(false);
 
   useEffect(() => {
     setTarget(watch?.targetPriceCents != null ? (watch.targetPriceCents / 100).toFixed(2) : '');
@@ -28,15 +31,18 @@ export function TrackPanel({ product, watch, stats, onChange }) {
 
   if (!user) {
     return (
-      <section className="card p-4 sm:p-5">
-        <h2 className="text-base font-semibold text-ink">Track this price</h2>
-        <p className="mt-1 text-sm text-ink-2">
-          Sign in to save this product, set a target price and get alerted when it drops.
-        </p>
-        <Link to="/account" className="btn-primary mt-3 w-full sm:w-auto">
-          Sign in or create an account
+      <Card className="p-4 sm:p-5">
+        <CardHeader
+          title="Track this price"
+          subtitle="Set the price you'd pay and we'll watch every retailer for you."
+        />
+        <Link to="/account" className="mt-4 inline-block no-underline">
+          <Button variant="primary">
+            <Bell className="h-4 w-4" aria-hidden="true" />
+            Sign in to track
+          </Button>
         </Link>
-      </section>
+      </Card>
     );
   }
 
@@ -44,13 +50,16 @@ export function TrackPanel({ product, watch, stats, onChange }) {
 
   async function save(event) {
     event.preventDefault();
-    setBusy(true);
     setError(null);
+
+    const targetPriceCents = target.trim() === '' ? null : parseMoneyToCents(target);
+    if (target.trim() !== '' && (!targetPriceCents || targetPriceCents <= 0)) {
+      setError('Enter a price like 249.99, or leave it blank to track without a target.');
+      return;
+    }
+
+    setBusy(true);
     try {
-      const targetPriceCents = target.trim() === '' ? null : parseMoneyToCents(target);
-      if (target.trim() !== '' && (!targetPriceCents || targetPriceCents <= 0)) {
-        throw new Error('Enter a target price like 249.99, or leave it blank.');
-      }
       await api.addWatch({
         productId: product.id,
         targetPriceCents,
@@ -58,11 +67,14 @@ export function TrackPanel({ product, watch, stats, onChange }) {
         notifyBelowAverage: belowAverage,
         notifyAllTimeLow: allTimeLow,
       });
-      setSaved(true);
-      setTimeout(() => setSaved(false), 2500);
+      toast.success(
+        watch ? 'Tracking updated' : 'Now tracking this product',
+        targetPriceCents ? `We'll alert you under ${money(targetPriceCents)}` : undefined,
+      );
       await onChange?.();
     } catch (err) {
       setError(err.message);
+      toast.error("Couldn't save that", err.message);
     } finally {
       setBusy(false);
     }
@@ -70,91 +82,85 @@ export function TrackPanel({ product, watch, stats, onChange }) {
 
   async function remove() {
     setBusy(true);
-    setError(null);
     try {
       await api.removeWatch(watch.id);
+      toast.success('Stopped tracking', product.title);
       await onChange?.();
     } catch (err) {
-      setError(err.message);
+      toast.error("Couldn't remove that", err.message);
     } finally {
       setBusy(false);
     }
   }
 
   return (
-    <section className="card p-4 sm:p-5" aria-labelledby="track-heading">
-      <div className="flex items-center justify-between gap-3">
-        <h2 id="track-heading" className="flex items-center gap-2 text-base font-semibold text-ink">
-          <BookmarkIcon filled={Boolean(watch)} className="h-5 w-5 text-brand" />
-          {watch ? 'Tracking this product' : 'Track this price'}
-        </h2>
-        {watch && (
-          <button type="button" onClick={remove} className="btn-ghost px-2 py-1.5 text-xs" disabled={busy}>
-            <TrashIcon className="h-4 w-4" />
-            Stop tracking
-          </button>
-        )}
-      </div>
+    <Card className="p-4 sm:p-5" aria-labelledby="track-heading">
+      <CardHeader
+        id="track-heading"
+        title={watch ? 'Tracking this product' : 'Track this price'}
+        subtitle={
+          watch
+            ? 'We check this on every scheduled refresh.'
+            : "Set a target and we'll tell you the moment it lands."
+        }
+        action={
+          watch ? (
+            <Button variant="ghost" size="sm" onClick={remove} disabled={busy}>
+              <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
+              Stop tracking
+            </Button>
+          ) : null
+        }
+      />
 
-      <form onSubmit={save} className="mt-3 space-y-3">
-        <label className="block">
-          <span className="text-sm font-medium text-ink-2">Alert me under</span>
-          <div className="mt-1 flex items-center gap-2">
-            <div className="relative flex-1">
-              <span className="absolute top-1/2 left-3.5 -translate-y-1/2 text-muted">$</span>
-              <input
-                type="text"
-                inputMode="decimal"
-                value={target}
-                onChange={(event) => setTarget(event.target.value)}
-                placeholder={suggested ? (suggested / 100).toFixed(2) : '0.00'}
-                className="field tabular pl-7"
-                aria-label="Target price in dollars"
-              />
-            </div>
-            <button type="submit" className="btn-primary shrink-0" disabled={busy}>
-              {busy ? <Spinner className="h-5 w-5" /> : watch ? 'Update' : 'Track'}
-            </button>
-          </div>
-          {suggested != null && (
-            <span className="mt-1 block text-xs text-muted">
-              Lowest seen in this window: {money(suggested)}
-            </span>
-          )}
-        </label>
+      <form onSubmit={save} className="mt-4 space-y-4">
+        <div className="flex items-end gap-2">
+          <Field
+            label="Alert me under"
+            prefix="$"
+            type="text"
+            inputMode="decimal"
+            value={target}
+            onChange={(event) => setTarget(event.target.value)}
+            placeholder={suggested ? (suggested / 100).toFixed(2) : '0.00'}
+            aria-label="Target price in dollars"
+            error={error}
+            hint={suggested != null ? `Lowest seen recently: ${money(suggested)}` : undefined}
+            className="flex-1"
+            inputClassName="tabular"
+          />
+          <Button type="submit" variant="primary" size="lg" loading={busy} className="mb-[26px]">
+            {watch ? 'Update' : 'Track'}
+          </Button>
+        </div>
 
-        <fieldset className="space-y-2">
-          <legend className="sr-only">Additional alerts</legend>
-          <Toggle checked={allTimeLow} onChange={setAllTimeLow} label="Also alert on a new all-time low" />
-          <Toggle
+        <fieldset className="space-y-2.5">
+          <legend className="text-label mb-1 text-muted">Also alert me when</legend>
+          <Checkbox
+            checked={allTimeLow}
+            onChange={setAllTimeLow}
+            label="It hits a new all-time low"
+          />
+          <Checkbox
             checked={belowAverage}
             onChange={setBelowAverage}
-            label="Also alert when it drops below its average"
+            label="It drops below its usual price"
           />
-          <Toggle checked={emailAlerts} onChange={setEmailAlerts} label="Email me as well as in-app" />
+          <Checkbox
+            checked={emailAlerts}
+            onChange={setEmailAlerts}
+            label="Email me as well as in-app"
+            description="Needs a mail provider configured on the server."
+          />
         </fieldset>
 
-        {error && (
-          <p role="alert" className="text-sm text-critical">
-            {error}
+        {watch && (
+          <p className="text-help flex items-center gap-1.5 text-muted">
+            <BellRing className="h-3.5 w-3.5" aria-hidden="true" />
+            Alerts appear in your notification centre.
           </p>
         )}
-        {saved && !error && <p className="text-sm text-good-text">Saved. We'll watch this one for you.</p>}
       </form>
-    </section>
-  );
-}
-
-function Toggle({ checked, onChange, label }) {
-  return (
-    <label className="flex cursor-pointer items-center gap-2.5 text-sm text-ink-2">
-      <input
-        type="checkbox"
-        checked={checked}
-        onChange={(event) => onChange(event.target.checked)}
-        className="h-4 w-4 rounded border-line accent-brand"
-      />
-      {label}
-    </label>
+    </Card>
   );
 }

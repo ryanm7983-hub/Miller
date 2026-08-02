@@ -10,6 +10,8 @@ import {
   XAxis,
   YAxis,
 } from 'recharts';
+import { Card, Segmented } from './ui/Primitives.jsx';
+import { Button } from './ui/Button.jsx';
 import { longDate, money, moneyShort, shortDate } from '../lib/format.js';
 import { retailerColor } from '../lib/retailers.js';
 
@@ -58,7 +60,7 @@ function ChartTooltip({ active, payload, label }) {
     .sort((a, b) => a.value - b.value);
 
   return (
-    <div className="min-w-44 rounded-xl bg-surface p-3 text-xs shadow-lg ring-1 ring-line">
+    <div className="min-w-44 rounded-xl bg-elevated p-3 text-xs shadow-lg ring-1 ring-border">
       <p className="mb-2 font-semibold text-ink">{longDate(label)}</p>
       <ul className="space-y-1">
         {rows.map((entry, index) => (
@@ -104,7 +106,7 @@ function Legend({ items }) {
 
 function DataTable({ rows, columns }) {
   return (
-    <div className="scroll-area mt-4 max-h-72 overflow-auto rounded-xl ring-1 ring-line">
+    <div className="scroll-area mt-4 max-h-72 overflow-auto rounded-xl ring-1 ring-border">
       <table className="w-full text-left text-xs">
         <caption className="sr-only">Price history data</caption>
         <thead className="sticky top-0 bg-surface-2 text-ink-2">
@@ -117,7 +119,7 @@ function DataTable({ rows, columns }) {
             ))}
           </tr>
         </thead>
-        <tbody className="divide-y divide-line">
+        <tbody className="divide-y divide-border">
           {rows.map((row) => (
             <tr key={row.date}>
               <th scope="row" className="px-3 py-1.5 font-normal whitespace-nowrap text-ink-2">
@@ -206,36 +208,27 @@ export function PriceHistoryChart({
   const hasData = data.length > 1;
 
   return (
-    <section className="card p-4 sm:p-5" aria-labelledby="history-heading">
+    <Card className="p-4 sm:p-5" aria-labelledby="history-heading">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h2 id="history-heading" className="text-base font-semibold text-ink">
+          <h2 id="history-heading" className="text-section text-ink">
             {byRetailer ? 'Price by retailer' : 'Best price over time'}
           </h2>
-          <p className="mt-0.5 text-xs text-muted">
+          <p className="text-help mt-0.5 text-ink-3">
             Total including shipping{history?.containsSyntheticData ? ' · includes sample history' : ''}
           </p>
         </div>
 
-        <div className="flex items-center gap-1 rounded-xl bg-surface-2 p-1" role="group" aria-label="Date range">
-          {RANGES.map((range) => (
-            <button
-              key={range.days}
-              type="button"
-              onClick={() => onDaysChange(range.days)}
-              aria-pressed={days === range.days}
-              className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors ${
-                days === range.days ? 'bg-surface text-ink shadow-sm' : 'text-ink-2 hover:text-ink'
-              }`}
-            >
-              {range.label}
-            </button>
-          ))}
-        </div>
+        <Segmented
+          label="Date range"
+          value={days}
+          onChange={onDaysChange}
+          options={RANGES.map((range) => ({ value: range.days, label: range.label }))}
+        />
       </div>
 
       {!hasData ? (
-        <p className="py-12 text-center text-sm text-muted">
+        <p className="py-14 text-center text-[13px] text-muted">
           {loading ? 'Loading price history…' : 'Not enough history yet — check back after the next price refresh.'}
         </p>
       ) : (
@@ -245,13 +238,13 @@ export function PriceHistoryChart({
           <div className="mt-4 h-56 touch-pan-y sm:h-72">
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={data} margin={{ top: 18, right: 12, bottom: 0, left: 0 }}>
-                <CartesianGrid vertical={false} stroke="var(--ps-line)" strokeWidth={1} />
+                <CartesianGrid vertical={false} stroke="var(--ps-grid)" strokeWidth={1} />
                 <XAxis
                   dataKey="date"
                   ticks={ticks}
                   tickFormatter={shortDate}
                   tickLine={false}
-                  axisLine={{ stroke: 'var(--ps-baseline)' }}
+                  axisLine={{ stroke: 'var(--ps-axis)' }}
                   tick={{ fill: 'var(--ps-muted)', fontSize: 11 }}
                   minTickGap={12}
                 />
@@ -266,7 +259,7 @@ export function PriceHistoryChart({
                 />
                 <Tooltip
                   content={<ChartTooltip />}
-                  cursor={{ stroke: 'var(--ps-baseline)', strokeWidth: 1 }}
+                  cursor={{ stroke: 'var(--ps-axis)', strokeWidth: 1 }}
                 />
 
                 {/* Threshold rules are keyed below the plot, not labelled
@@ -289,7 +282,7 @@ export function PriceHistoryChart({
                       stroke={colors.get(retailer)}
                       strokeWidth={2}
                       dot={false}
-                      activeDot={{ r: 4, strokeWidth: 2, stroke: 'var(--ps-surface)' }}
+                      activeDot={{ r: 4, strokeWidth: 2, stroke: 'var(--ps-chart-surface)' }}
                       connectNulls={false}
                       isAnimationActive={false}
                     />
@@ -302,7 +295,7 @@ export function PriceHistoryChart({
                     stroke="var(--ps-series-1)"
                     strokeWidth={2}
                     dot={false}
-                    activeDot={{ r: 4, strokeWidth: 2, stroke: 'var(--ps-surface)' }}
+                    activeDot={{ r: 4, strokeWidth: 2, stroke: 'var(--ps-chart-surface)' }}
                     isAnimationActive={false}
                   />
                 )}
@@ -313,7 +306,7 @@ export function PriceHistoryChart({
                     y={low.best}
                     r={4}
                     fill="var(--ps-series-1)"
-                    stroke="var(--ps-surface)"
+                    stroke="var(--ps-chart-surface)"
                     strokeWidth={2}
                     label={{
                       value: `low ${money(low.best)}`,
@@ -346,22 +339,22 @@ export function PriceHistoryChart({
           </ul>
 
           <div className="mt-4 flex flex-wrap items-center gap-2">
-            <button
-              type="button"
+            <Button
+              variant="secondary"
+              size="sm"
               onClick={() => setByRetailer((value) => !value)}
-              className="btn-secondary px-3 py-1.5 text-xs"
               aria-pressed={byRetailer}
             >
               {byRetailer ? 'Show blended best price' : 'Break down by retailer'}
-            </button>
-            <button
-              type="button"
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
               onClick={() => setShowTable((value) => !value)}
-              className="btn-ghost px-3 py-1.5 text-xs"
               aria-expanded={showTable}
             >
               {showTable ? 'Hide data table' : 'View as table'}
-            </button>
+            </Button>
           </div>
 
           {showTable && (
@@ -376,6 +369,6 @@ export function PriceHistoryChart({
           )}
         </>
       )}
-    </section>
+    </Card>
   );
 }

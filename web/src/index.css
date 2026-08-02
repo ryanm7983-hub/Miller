@@ -1,28 +1,68 @@
+@import '@fontsource-variable/inter';
 @import 'tailwindcss';
 
 /*
- * Design tokens. Light and dark are two selected sets of the same palette
- * (chart surfaces included), so the price-history chart renders on exactly the
- * surface its categorical palette was validated against.
+ * PriceScout design tokens.
+ *
+ * One 8px spacing rhythm, one type scale, one elevation ladder. Components are
+ * written against these roles, never raw hex, so light and dark are two
+ * selected sets rather than an inversion.
+ *
+ * The eight categorical series slots are a colourblind-validated set, checked
+ * against both chart surfaces (#ffffff and #0f172a).
  */
 :root {
   color-scheme: light;
-  --ps-plane: #f9f9f7;
-  --ps-surface: #fcfcfb;
-  --ps-surface-2: #f0efec;
-  --ps-ink: #0b0b0b;
-  --ps-ink-2: #52514e;
-  --ps-muted: #898781;
-  --ps-line: #e1e0d9;
-  --ps-baseline: #c3c2b7;
-  --ps-brand: #2a78d6;
-  --ps-brand-ink: #ffffff;
-  --ps-good: #0ca30c;
-  --ps-good-text: #006300;
-  --ps-critical: #d03b3b;
-  --ps-warning: #fab219;
 
-  /* Categorical series slots — see references/palette.md (validated set). */
+  --ps-bg: #f8fafc;
+  --ps-surface: #ffffff;
+  --ps-surface-2: #f1f5f9;
+  --ps-surface-3: #e2e8f0;
+  --ps-elevated: #ffffff;
+
+  --ps-border: #e2e8f0;
+  --ps-border-strong: #cbd5e1;
+
+  --ps-text: #0f172a;
+  --ps-text-2: #475569;
+  --ps-text-3: #64748b;
+  --ps-muted: #94a3b8;
+
+  --ps-primary: #2563eb;
+  --ps-primary-hover: #1d4ed8;
+  --ps-primary-active: #1e40af;
+  --ps-primary-wash: #eff6ff;
+  --ps-primary-ring: rgba(37, 99, 235, 0.35);
+  --ps-on-primary: #ffffff;
+
+  --ps-success: #22c55e;
+  --ps-success-text: #15803d;
+  --ps-success-wash: #f0fdf4;
+  --ps-success-border: #bbf7d0;
+
+  --ps-warning: #f59e0b;
+  --ps-warning-text: #b45309;
+  --ps-warning-wash: #fffbeb;
+
+  --ps-danger: #ef4444;
+  --ps-danger-text: #b91c1c;
+  --ps-danger-wash: #fef2f2;
+  --ps-danger-border: #fecaca;
+
+  --ps-skeleton: #e8edf3;
+  --ps-skeleton-sheen: #f4f7fa;
+
+  --ps-shadow-xs: 0 1px 2px rgba(15, 23, 42, 0.04);
+  --ps-shadow-sm: 0 1px 3px rgba(15, 23, 42, 0.06), 0 1px 2px rgba(15, 23, 42, 0.04);
+  --ps-shadow-md: 0 4px 12px rgba(15, 23, 42, 0.07), 0 2px 4px rgba(15, 23, 42, 0.04);
+  --ps-shadow-lg: 0 12px 32px rgba(15, 23, 42, 0.1), 0 4px 8px rgba(15, 23, 42, 0.04);
+  --ps-shadow-primary: 0 1px 2px rgba(37, 99, 235, 0.28), 0 4px 12px rgba(37, 99, 235, 0.18);
+
+  /* Chart surface — what the series palette was validated against. */
+  --ps-chart-surface: #ffffff;
+  --ps-grid: #eef2f6;
+  --ps-axis: #cbd5e1;
+
   --ps-series-1: #2a78d6;
   --ps-series-2: #eb6834;
   --ps-series-3: #1baf7a;
@@ -34,20 +74,55 @@
 }
 
 @media (prefers-color-scheme: dark) {
-  :root {
+  :root:where(:not([data-theme='light'])) {
     color-scheme: dark;
-    --ps-plane: #0d0d0d;
-    --ps-surface: #1a1a19;
-    --ps-surface-2: #242423;
-    --ps-ink: #ffffff;
-    --ps-ink-2: #c3c2b7;
-    --ps-muted: #898781;
-    --ps-line: #2c2c2a;
-    --ps-baseline: #383835;
-    --ps-brand: #3987e5;
-    --ps-good: #0ca30c;
-    --ps-good-text: #0ca30c;
-    --ps-critical: #e66767;
+
+    --ps-bg: #020617;
+    --ps-surface: #0f172a;
+    --ps-surface-2: #1e293b;
+    --ps-surface-3: #334155;
+    --ps-elevated: #172033;
+
+    --ps-border: #1e293b;
+    --ps-border-strong: #334155;
+
+    --ps-text: #f8fafc;
+    --ps-text-2: #cbd5e1;
+    --ps-text-3: #94a3b8;
+    --ps-muted: #64748b;
+
+    --ps-primary: #3b82f6;
+    --ps-primary-hover: #60a5fa;
+    --ps-primary-active: #93c5fd;
+    --ps-primary-wash: rgba(59, 130, 246, 0.12);
+    --ps-primary-ring: rgba(96, 165, 250, 0.45);
+
+    --ps-success: #22c55e;
+    --ps-success-text: #4ade80;
+    --ps-success-wash: rgba(34, 197, 94, 0.12);
+    --ps-success-border: rgba(34, 197, 94, 0.3);
+
+    --ps-warning: #f59e0b;
+    --ps-warning-text: #fbbf24;
+    --ps-warning-wash: rgba(245, 158, 11, 0.12);
+
+    --ps-danger: #f87171;
+    --ps-danger-text: #fca5a5;
+    --ps-danger-wash: rgba(248, 113, 113, 0.12);
+    --ps-danger-border: rgba(248, 113, 113, 0.3);
+
+    --ps-skeleton: #1e293b;
+    --ps-skeleton-sheen: #293548;
+
+    --ps-shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.3);
+    --ps-shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.4), 0 1px 2px rgba(0, 0, 0, 0.3);
+    --ps-shadow-md: 0 4px 12px rgba(0, 0, 0, 0.45), 0 2px 4px rgba(0, 0, 0, 0.3);
+    --ps-shadow-lg: 0 12px 32px rgba(0, 0, 0, 0.55), 0 4px 8px rgba(0, 0, 0, 0.35);
+    --ps-shadow-primary: 0 1px 2px rgba(0, 0, 0, 0.4), 0 4px 12px rgba(59, 130, 246, 0.25);
+
+    --ps-chart-surface: #0f172a;
+    --ps-grid: #1e293b;
+    --ps-axis: #334155;
 
     --ps-series-1: #3987e5;
     --ps-series-2: #d95926;
@@ -60,95 +135,252 @@
   }
 }
 
-@theme inline {
-  --color-plane: var(--ps-plane);
-  --color-surface: var(--ps-surface);
-  --color-surface-2: var(--ps-surface-2);
-  --color-ink: var(--ps-ink);
-  --color-ink-2: var(--ps-ink-2);
-  --color-muted: var(--ps-muted);
-  --color-line: var(--ps-line);
-  --color-baseline: var(--ps-baseline);
-  --color-brand: var(--ps-brand);
-  --color-brand-ink: var(--ps-brand-ink);
-  --color-good: var(--ps-good);
-  --color-good-text: var(--ps-good-text);
-  --color-critical: var(--ps-critical);
-  --color-warning: var(--ps-warning);
-  --font-sans: system-ui, -apple-system, 'Segoe UI', sans-serif;
+:root[data-theme='dark'] {
+  color-scheme: dark;
+  --ps-bg: #020617;
+  --ps-surface: #0f172a;
+  --ps-surface-2: #1e293b;
+  --ps-surface-3: #334155;
+  --ps-elevated: #172033;
+  --ps-border: #1e293b;
+  --ps-border-strong: #334155;
+  --ps-text: #f8fafc;
+  --ps-text-2: #cbd5e1;
+  --ps-text-3: #94a3b8;
+  --ps-muted: #64748b;
+  --ps-primary: #3b82f6;
+  --ps-primary-hover: #60a5fa;
+  --ps-primary-active: #93c5fd;
+  --ps-primary-wash: rgba(59, 130, 246, 0.12);
+  --ps-primary-ring: rgba(96, 165, 250, 0.45);
+  --ps-success: #22c55e;
+  --ps-success-text: #4ade80;
+  --ps-success-wash: rgba(34, 197, 94, 0.12);
+  --ps-success-border: rgba(34, 197, 94, 0.3);
+  --ps-warning: #f59e0b;
+  --ps-warning-text: #fbbf24;
+  --ps-warning-wash: rgba(245, 158, 11, 0.12);
+  --ps-danger: #f87171;
+  --ps-danger-text: #fca5a5;
+  --ps-danger-wash: rgba(248, 113, 113, 0.12);
+  --ps-danger-border: rgba(248, 113, 113, 0.3);
+  --ps-skeleton: #1e293b;
+  --ps-skeleton-sheen: #293548;
+  --ps-shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.3);
+  --ps-shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.4), 0 1px 2px rgba(0, 0, 0, 0.3);
+  --ps-shadow-md: 0 4px 12px rgba(0, 0, 0, 0.45), 0 2px 4px rgba(0, 0, 0, 0.3);
+  --ps-shadow-lg: 0 12px 32px rgba(0, 0, 0, 0.55), 0 4px 8px rgba(0, 0, 0, 0.35);
+  --ps-shadow-primary: 0 1px 2px rgba(0, 0, 0, 0.4), 0 4px 12px rgba(59, 130, 246, 0.25);
+  --ps-chart-surface: #0f172a;
+  --ps-grid: #1e293b;
+  --ps-axis: #334155;
+  --ps-series-1: #3987e5;
+  --ps-series-2: #d95926;
+  --ps-series-3: #199e70;
+  --ps-series-4: #c98500;
+  --ps-series-5: #d55181;
+  --ps-series-6: #008300;
+  --ps-series-7: #9085e9;
+  --ps-series-8: #e66767;
 }
 
-html,
-body,
-#root {
-  height: 100%;
+@theme inline {
+  --color-bg: var(--ps-bg);
+  --color-surface: var(--ps-surface);
+  --color-surface-2: var(--ps-surface-2);
+  --color-surface-3: var(--ps-surface-3);
+  --color-elevated: var(--ps-elevated);
+  --color-border: var(--ps-border);
+  --color-border-strong: var(--ps-border-strong);
+  --color-ink: var(--ps-text);
+  --color-ink-2: var(--ps-text-2);
+  --color-ink-3: var(--ps-text-3);
+  --color-muted: var(--ps-muted);
+  --color-primary: var(--ps-primary);
+  --color-primary-hover: var(--ps-primary-hover);
+  --color-primary-wash: var(--ps-primary-wash);
+  --color-on-primary: var(--ps-on-primary);
+  --color-success: var(--ps-success);
+  --color-success-text: var(--ps-success-text);
+  --color-success-wash: var(--ps-success-wash);
+  --color-success-border: var(--ps-success-border);
+  --color-warning: var(--ps-warning);
+  --color-warning-text: var(--ps-warning-text);
+  --color-warning-wash: var(--ps-warning-wash);
+  --color-danger: var(--ps-danger);
+  --color-danger-text: var(--ps-danger-text);
+  --color-danger-wash: var(--ps-danger-wash);
+  --color-danger-border: var(--ps-danger-border);
+
+  --font-sans: 'Inter Variable', Inter, system-ui, -apple-system, 'Segoe UI', sans-serif;
+
+  --radius-lg: 10px;
+  --radius-xl: 12px;
+  --radius-2xl: 14px;
+  --radius-3xl: 18px;
+
+  --shadow-xs: var(--ps-shadow-xs);
+  --shadow-sm: var(--ps-shadow-sm);
+  --shadow-md: var(--ps-shadow-md);
+  --shadow-lg: var(--ps-shadow-lg);
+}
+
+html {
+  scroll-behavior: smooth;
 }
 
 body {
-  background: var(--ps-plane);
-  color: var(--ps-ink);
+  margin: 0;
+  background: var(--ps-bg);
+  color: var(--ps-text);
   font-family: var(--font-sans);
+  font-size: 14px;
+  line-height: 1.5;
+  font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
   -webkit-font-smoothing: antialiased;
-  /* `clip` contains stray overflow without making <body> a scroll container
-     the way `hidden` does — that is what breaks momentum scrolling on iOS. */
   overflow-x: clip;
   -webkit-tap-highlight-color: transparent;
 }
 
 #root {
-  /* Survives the mobile address bar collapsing. */
   min-height: 100dvh;
 }
 
-/* Any nested scroll area keeps its swipe to itself. */
+::selection {
+  background: var(--ps-primary-wash);
+  color: var(--ps-text);
+}
+
+/* One focus treatment everywhere. */
+:where(a, button, input, select, textarea, [tabindex]):focus-visible {
+  outline: 2px solid var(--ps-primary);
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+
+/* Scrollbars, so nested scroll areas don't look like a 2009 web app. */
+@supports (scrollbar-width: thin) {
+  .scroll-area,
+  body {
+    scrollbar-width: thin;
+    scrollbar-color: var(--ps-border-strong) transparent;
+  }
+}
+
 .scroll-area {
   overscroll-behavior: contain;
 }
 
-@layer components {
-  .card {
-    @apply rounded-2xl bg-surface ring-1 ring-line;
-  }
-
-  /*
-   * Tailwind v4 cannot `@apply` one custom component class inside another, so
-   * each button variant carries the shared base declarations.
-   */
-  .btn,
-  .btn-primary,
-  .btn-secondary,
-  .btn-ghost {
-    @apply inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold
-      transition-colors disabled:cursor-not-allowed disabled:opacity-50;
-  }
-
-  .btn-primary {
-    @apply bg-brand text-white hover:opacity-90;
-  }
-
-  .btn-secondary {
-    @apply bg-surface-2 text-ink ring-1 ring-line hover:bg-line/60;
-  }
-
-  .btn-ghost {
-    @apply text-ink-2 hover:bg-surface-2;
-  }
-
-  .field {
-    @apply w-full rounded-xl bg-surface px-4 py-3 text-base text-ink ring-1 ring-line
-      outline-none placeholder:text-muted focus:ring-2 focus:ring-brand;
-  }
-
-  .chip {
-    @apply inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium;
-  }
-
+@layer utilities {
   .tabular {
     font-variant-numeric: tabular-nums;
   }
+
+  .text-display {
+    font-size: 30px;
+    line-height: 36px;
+    font-weight: 700;
+    letter-spacing: -0.025em;
+  }
+
+  .text-title {
+    font-size: 22px;
+    line-height: 30px;
+    font-weight: 650;
+    letter-spacing: -0.02em;
+  }
+
+  .text-section {
+    font-size: 17px;
+    line-height: 26px;
+    font-weight: 620;
+    letter-spacing: -0.012em;
+  }
+
+  .text-label {
+    font-size: 11px;
+    line-height: 16px;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+
+  .text-help {
+    font-size: 12.5px;
+    line-height: 18px;
+  }
+
+  /* A hairline that reads as a border in both themes. */
+  .ring-hairline {
+    box-shadow: inset 0 0 0 1px var(--ps-border);
+  }
 }
 
-/* Recharts: keep the focus/active outline from boxing the plot area. */
+@keyframes ps-shimmer {
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+@keyframes ps-fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes ps-scale-in {
+  from {
+    opacity: 0;
+    transform: scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes ps-toast-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.animate-fade-up {
+  animation: ps-fade-up 220ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.animate-scale-in {
+  animation: ps-scale-in 180ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.animate-toast-in {
+  animation: ps-toast-in 220ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* Recharts owns its own focus outline; ours is on the wrapper. */
 .recharts-wrapper:focus,
 .recharts-surface:focus {
   outline: none;

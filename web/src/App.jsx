@@ -1,5 +1,6 @@
 import { Navigate, Route, Routes } from 'react-router-dom';
 import { AppShell } from './components/AppShell.jsx';
+import { DashboardPage } from './pages/DashboardPage.jsx';
 import { SearchPage } from './pages/SearchPage.jsx';
 import { ProductPage } from './pages/ProductPage.jsx';
 import { WatchlistPage } from './pages/WatchlistPage.jsx';
@@ -10,7 +11,8 @@ export function App() {
   return (
     <Routes>
       <Route element={<AppShell />}>
-        <Route index element={<SearchPage />} />
+        <Route index element={<DashboardPage />} />
+        <Route path="search" element={<SearchPage />} />
         <Route path="product/:id" element={<ProductPage />} />
         <Route path="watchlist" element={<WatchlistPage />} />
         <Route path="alerts" element={<AlertsPage />} />

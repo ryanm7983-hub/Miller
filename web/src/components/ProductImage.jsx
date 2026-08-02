@@ -29,7 +29,7 @@ function ImageOrArt({ product, priority = false, padding = 'p-[6%]' }) {
   return (
     <>
       {state === 'loading' && (
-        <div className="absolute inset-0 animate-pulse bg-line/60" aria-hidden="true" />
+        <div className="absolute inset-0 animate-pulse bg-surface-3" aria-hidden="true" />
       )}
       <img
         src={src}
@@ -54,7 +54,7 @@ function ImageOrArt({ product, priority = false, padding = 'p-[6%]' }) {
  */
 export function ProductImage({ product, className = 'h-16 w-16', rounded = 'rounded-xl' }) {
   return (
-    <div className={`${className} ${rounded} relative overflow-hidden bg-[#f4f3f0] ring-1 ring-line`}>
+    <div className={`${className} ${rounded} relative overflow-hidden bg-[#f6f7f9] ring-1 ring-border`}>
       <ImageOrArt product={product} padding="p-[8%]" />
     </div>
   );
@@ -67,14 +67,14 @@ export function ProductImage({ product, className = 'h-16 w-16', rounded = 'roun
 export function ProductHero({ product, className = '' }) {
   return (
     <div
-      className={`relative flex items-center justify-center overflow-hidden rounded-2xl ring-1 ring-line ${className}`}
+      className={`relative flex items-center justify-center overflow-hidden rounded-2xl ring-1 ring-border ${className}`}
       style={{
         background:
-          'radial-gradient(120% 90% at 50% 0%, #ffffff 0%, #f5f4f1 55%, #e8e6e1 100%)',
+          'radial-gradient(120% 90% at 50% 0%, #ffffff 0%, #f6f8fa 55%, #e8edf2 100%)',
       }}
     >
       <div
-        className="pointer-events-none absolute bottom-[11%] left-1/2 h-3 w-[46%] -translate-x-1/2 rounded-[50%] bg-black/15 blur-md"
+        className="pointer-events-none absolute bottom-[11%] left-1/2 h-3 w-[46%] -translate-x-1/2 rounded-[50%] bg-slate-900/15 blur-md"
         aria-hidden="true"
       />
       <div className="relative h-[82%] w-[82%]">
