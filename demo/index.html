@@ -1,0 +1,1843 @@
+<title>PriceScout — price comparison & history</title>
+
+<style>
+  /* ---------------------------------------------------------------------
+     Tokens — the same palette the full app uses. The categorical series
+     slots are the colourblind-validated set; light and dark are two
+     selected sets, not an inversion.
+  --------------------------------------------------------------------- */
+  :root {
+    color-scheme: light;
+    --plane: #f9f9f7;
+    --surface: #fcfcfb;
+    --surface-2: #f0efec;
+    --ink: #0b0b0b;
+    --ink-2: #52514e;
+    --muted: #898781;
+    --line: #e1e0d9;
+    --baseline: #c3c2b7;
+    --brand: #2a78d6;
+    --good: #0ca30c;
+    --good-text: #006300;
+    --good-wash: rgba(12, 163, 12, 0.1);
+    --critical: #d03b3b;
+    --shadow: 0 1px 2px rgba(11, 11, 11, 0.04), 0 8px 24px rgba(11, 11, 11, 0.05);
+
+    --s1: #2a78d6;
+    --s2: #eb6834;
+    --s3: #1baf7a;
+    --s4: #eda100;
+    --s5: #e87ba4;
+    --s6: #008300;
+    --s7: #4a3aa7;
+    --s8: #e34948;
+
+    --font: system-ui, -apple-system, 'Segoe UI', sans-serif;
+    --radius: 16px;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:where(:not([data-theme='light'])) {
+      color-scheme: dark;
+      --plane: #0d0d0d;
+      --surface: #1a1a19;
+      --surface-2: #242423;
+      --ink: #ffffff;
+      --ink-2: #c3c2b7;
+      --muted: #898781;
+      --line: #2c2c2a;
+      --baseline: #383835;
+      --brand: #3987e5;
+      --good: #0ca30c;
+      --good-text: #0ca30c;
+      --good-wash: rgba(12, 163, 12, 0.14);
+      --critical: #e66767;
+      --shadow: 0 1px 2px rgba(0, 0, 0, 0.4), 0 8px 24px rgba(0, 0, 0, 0.3);
+
+      --s1: #3987e5;
+      --s2: #d95926;
+      --s3: #199e70;
+      --s4: #c98500;
+      --s5: #d55181;
+      --s6: #008300;
+      --s7: #9085e9;
+      --s8: #e66767;
+    }
+  }
+
+  :root[data-theme='dark'] {
+    color-scheme: dark;
+    --plane: #0d0d0d;
+    --surface: #1a1a19;
+    --surface-2: #242423;
+    --ink: #ffffff;
+    --ink-2: #c3c2b7;
+    --muted: #898781;
+    --line: #2c2c2a;
+    --baseline: #383835;
+    --brand: #3987e5;
+    --good: #0ca30c;
+    --good-text: #0ca30c;
+    --good-wash: rgba(12, 163, 12, 0.14);
+    --critical: #e66767;
+    --shadow: 0 1px 2px rgba(0, 0, 0, 0.4), 0 8px 24px rgba(0, 0, 0, 0.3);
+    --s1: #3987e5;
+    --s2: #d95926;
+    --s3: #199e70;
+    --s4: #c98500;
+    --s5: #d55181;
+    --s6: #008300;
+    --s7: #9085e9;
+    --s8: #e66767;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    background: var(--plane);
+    color: var(--ink);
+    font-family: var(--font);
+    font-size: 15px;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
+  }
+
+  .tabular { font-variant-numeric: tabular-nums; }
+
+  .app {
+    max-width: 900px;
+    margin: 0 auto;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* --- chrome --- */
+  .topbar {
+    position: sticky;
+    top: 0;
+    z-index: 20;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 12px 16px;
+    background: color-mix(in srgb, var(--plane) 88%, transparent);
+    backdrop-filter: blur(10px);
+    border-bottom: 1px solid var(--line);
+  }
+
+  .brand { display: flex; align-items: center; gap: 9px; }
+
+  .mark {
+    width: 28px; height: 28px; border-radius: 9px;
+    background: var(--brand);
+    display: grid; place-items: center;
+    flex-shrink: 0;
+  }
+
+  .brand-name { font-size: 18px; font-weight: 700; letter-spacing: -0.02em; }
+
+  .topnav { display: none; gap: 2px; }
+
+  .navlink {
+    display: flex; align-items: center; gap: 7px;
+    padding: 8px 12px;
+    border-radius: 11px;
+    font-size: 14px; font-weight: 500;
+    color: var(--ink-2);
+    background: none; border: 0; cursor: pointer;
+    font-family: inherit;
+  }
+  .navlink:hover { color: var(--ink); }
+  .navlink[aria-current='page'] { background: var(--surface-2); color: var(--ink); }
+
+  main { flex: 1; padding: 16px 16px 104px; display: flex; flex-direction: column; gap: 16px; }
+
+  .tabbar {
+    position: fixed; inset: auto 0 0 0; z-index: 20;
+    display: flex;
+    max-width: 900px; margin: 0 auto;
+    background: color-mix(in srgb, var(--plane) 95%, transparent);
+    backdrop-filter: blur(10px);
+    border-top: 1px solid var(--line);
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+
+  .tab {
+    flex: 1;
+    display: flex; flex-direction: column; align-items: center; gap: 3px;
+    padding: 9px 0 8px;
+    font: inherit; font-size: 11px; font-weight: 500;
+    color: var(--ink-2);
+    background: none; border: 0; cursor: pointer;
+  }
+  .tab[aria-current='page'] { color: var(--brand); }
+
+  .tab-icon { position: relative; display: block; }
+
+  .dot-badge {
+    position: absolute; top: -4px; right: -8px;
+    min-width: 16px; height: 16px; padding: 0 4px;
+    border-radius: 999px;
+    background: var(--critical); color: #fff;
+    font-size: 10px; font-weight: 700; line-height: 16px; text-align: center;
+  }
+
+  @media (min-width: 768px) {
+    .topnav { display: flex; }
+    .tabbar { display: none; }
+    main { padding-bottom: 40px; }
+  }
+
+  /* --- primitives --- */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+  }
+
+  .pad { padding: 16px; }
+  @media (min-width: 640px) { .pad { padding: 20px; } }
+
+  h1 { font-size: 22px; font-weight: 700; letter-spacing: -0.02em; margin: 0; text-wrap: balance; }
+  h2 { font-size: 17px; font-weight: 650; letter-spacing: -0.01em; margin: 0; text-wrap: balance; }
+  h3 { font-size: 15px; font-weight: 600; margin: 0; }
+  p { margin: 0; }
+
+  .stack { display: flex; flex-direction: column; gap: 16px; }
+  .stack-sm { display: flex; flex-direction: column; gap: 8px; }
+  .row { display: flex; align-items: center; gap: 8px; }
+  .row-between { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+  .wrap { flex-wrap: wrap; }
+  .grow { flex: 1; min-width: 0; }
+
+  .muted { color: var(--muted); }
+  .ink-2 { color: var(--ink-2); }
+  .xs { font-size: 12px; }
+  .sm { font-size: 13px; }
+  .micro {
+    font-size: 11px; font-weight: 600; letter-spacing: 0.06em;
+    text-transform: uppercase; color: var(--muted);
+  }
+
+  button, input { font-family: inherit; font-size: 15px; }
+
+  .btn {
+    display: inline-flex; align-items: center; justify-content: center; gap: 7px;
+    padding: 10px 16px;
+    border-radius: 12px; border: 1px solid transparent;
+    font-size: 14px; font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.15s, color 0.15s, opacity 0.15s;
+    text-decoration: none;
+  }
+  .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  .btn-primary { background: var(--brand); color: #fff; }
+  .btn-primary:hover:not(:disabled) { opacity: 0.9; }
+
+  .btn-secondary { background: var(--surface-2); color: var(--ink); border-color: var(--line); }
+  .btn-secondary:hover:not(:disabled) { background: var(--line); }
+
+  .btn-ghost { background: none; color: var(--ink-2); }
+  .btn-ghost:hover:not(:disabled) { background: var(--surface-2); color: var(--ink); }
+
+  .btn-sm { padding: 6px 11px; font-size: 12.5px; border-radius: 10px; }
+
+  :where(button, a, input, [tabindex]):focus-visible {
+    outline: 2px solid var(--brand);
+    outline-offset: 2px;
+  }
+
+  .input {
+    width: 100%;
+    padding: 12px 14px;
+    border-radius: 12px;
+    border: 1px solid var(--line);
+    background: var(--surface);
+    color: var(--ink);
+    outline: none;
+  }
+  .input:focus { border-color: var(--brand); box-shadow: 0 0 0 1px var(--brand); }
+  .input::placeholder { color: var(--muted); }
+
+  .chip {
+    display: inline-flex; align-items: center; gap: 5px;
+    padding: 3px 9px;
+    border-radius: 999px;
+    font-size: 11.5px; font-weight: 600;
+    background: var(--surface-2); color: var(--ink-2);
+    border: 1px solid var(--line);
+    white-space: nowrap;
+  }
+  .chip-good { background: var(--good-wash); color: var(--good-text); border-color: color-mix(in srgb, var(--good) 30%, transparent); }
+  .chip-plain { background: none; }
+
+  .segmented {
+    display: inline-flex; gap: 2px; padding: 3px;
+    background: var(--surface-2); border-radius: 12px;
+  }
+  .segmented button {
+    padding: 6px 12px; border: 0; border-radius: 9px;
+    background: none; color: var(--ink-2);
+    font-size: 12.5px; font-weight: 600; cursor: pointer;
+  }
+  .segmented button[aria-pressed='true'] { background: var(--surface); color: var(--ink); box-shadow: var(--shadow); }
+
+  .notice {
+    display: flex; gap: 10px; align-items: flex-start;
+    padding: 12px 14px;
+    border-radius: 12px;
+    background: var(--surface-2);
+    border: 1px solid var(--line);
+    font-size: 12.5px; color: var(--ink-2);
+    line-height: 1.45;
+  }
+  .notice svg { flex-shrink: 0; margin-top: 1px; color: var(--muted); }
+  .notice strong { color: var(--ink); }
+  .notice code {
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 11.5px;
+  }
+
+  .thumb {
+    display: grid; place-items: center;
+    background: var(--surface-2);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    font-weight: 700; color: var(--ink-2);
+    flex-shrink: 0;
+  }
+
+  .divider { height: 1px; background: var(--line); border: 0; margin: 0; }
+
+  /* --- search --- */
+  .searchbar { display: flex; gap: 8px; }
+  .search-field { position: relative; flex: 1; }
+  .search-field .input { padding-left: 40px; }
+  .search-field svg { position: absolute; left: 13px; top: 50%; transform: translateY(-50%); color: var(--muted); }
+
+  .result {
+    display: flex; gap: 12px; align-items: flex-start;
+    width: 100%; text-align: left;
+    padding: 12px;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    cursor: pointer;
+    box-shadow: var(--shadow);
+  }
+  .result:hover { background: var(--surface-2); }
+  .result-title {
+    font-size: 14.5px; font-weight: 600; color: var(--ink);
+    display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+  }
+  .price-lg { font-size: 19px; font-weight: 700; letter-spacing: -0.02em; }
+
+  /* --- offers --- */
+  .offer-row { display: flex; flex-direction: column; gap: 10px; padding: 14px 16px; }
+  .offer-row + .offer-row { border-top: 1px solid var(--line); }
+
+  .table-scroll { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; font-size: 14px; }
+  th { text-align: left; font-weight: 600; }
+  thead th {
+    font-size: 11.5px; font-weight: 600; color: var(--muted);
+    padding: 8px 12px; border-bottom: 1px solid var(--line);
+    white-space: nowrap;
+  }
+  tbody td, tbody th { padding: 12px; border-top: 1px solid var(--line); }
+  .num { text-align: right; font-variant-numeric: tabular-nums; }
+
+  .offers-mobile { display: block; }
+  .offers-desktop { display: none; }
+  @media (min-width: 700px) {
+    .offers-mobile { display: none; }
+    .offers-desktop { display: block; }
+  }
+
+  /* --- stat tiles --- */
+  .tiles { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+  .tile { padding: 10px 12px; border-radius: 12px; background: var(--surface-2); }
+  .tile-value { font-size: 16px; font-weight: 650; font-variant-numeric: tabular-nums; }
+
+  /* --- chart --- */
+  .chart-wrap { position: relative; width: 100%; touch-action: pan-y; }
+  .chart-wrap svg { display: block; width: 100%; }
+
+  .tooltip {
+    position: absolute; z-index: 5;
+    min-width: 150px; padding: 10px 12px;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    box-shadow: var(--shadow);
+    font-size: 12px;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.12s;
+  }
+  .tooltip[data-visible='true'] { opacity: 1; }
+  .tt-row { display: flex; justify-content: space-between; gap: 14px; }
+  .swatch { width: 8px; height: 8px; border-radius: 999px; display: inline-block; flex-shrink: 0; }
+
+  .legend { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: 12px; color: var(--ink-2); }
+  .legend span { display: inline-flex; align-items: center; gap: 6px; }
+
+  .history-table { max-height: 280px; overflow: auto; border: 1px solid var(--line); border-radius: 12px; }
+  .history-table thead th { position: sticky; top: 0; background: var(--surface-2); }
+
+  .empty { text-align: center; padding: 32px 16px; color: var(--muted); font-size: 14px; }
+
+  a { color: var(--brand); }
+
+  .banner-demo {
+    display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px;
+    padding: 10px 14px;
+    border-radius: 12px;
+    background: var(--surface-2);
+    border: 1px solid var(--line);
+    font-size: 12.5px; color: var(--ink-2);
+  }
+  /* Keep the explanation on its own line rather than letting the buttons
+     squeeze it into a one-word column. */
+  .banner-demo .grow { flex: 1 1 260px; }
+
+  @media (prefers-reduced-motion: reduce) {
+    * { transition: none !important; animation: none !important; }
+  }
+</style>
+
+<div class="app">
+  <header class="topbar">
+    <div class="brand">
+      <span class="mark" aria-hidden="true">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 4.6v13.2M5.8 11.6 12 18.6l6.2-7" />
+        </svg>
+      </span>
+      <span class="brand-name">PriceScout</span>
+    </div>
+    <nav class="topnav" id="topnav" aria-label="Main"></nav>
+  </header>
+
+  <main id="view"></main>
+
+  <nav class="tabbar" id="tabbar" aria-label="Main"></nav>
+</div>
+
+<script>
+(() => {
+  'use strict';
+
+  // =====================================================================
+  // Sample data engine — a browser port of the server's MockProvider.
+  // Every price on this page is generated by these functions. Nothing here
+  // touches a real retailer.
+  // =====================================================================
+
+  const DAY_MS = 86_400_000;
+
+  const CATALOG = [
+    { slug: 'sony-wh1000xm5', title: 'Sony WH-1000XM5 Wireless Noise-Cancelling Headphones', brand: 'Sony', model: 'WH-1000XM5', upc: '027242923004', category: 'Headphones', base: 39800, retailers: ['Amazon', 'Best Buy', 'Walmart', 'Target', 'eBay', 'B&H Photo'] },
+    { slug: 'airpods-pro-2-usbc', title: 'Apple AirPods Pro (2nd Generation, USB-C)', brand: 'Apple', model: 'MTJV3AM/A', upc: '195949052248', category: 'Headphones', base: 24900, retailers: ['Amazon', 'Walmart', 'Target', 'Best Buy', 'Costco'] },
+    { slug: 'switch-oled', title: 'Nintendo Switch OLED Model — White Joy-Con', brand: 'Nintendo', model: 'HEG-001', upc: '045496882730', category: 'Gaming', base: 34999, retailers: ['Amazon', 'Walmart', 'Target', 'Best Buy', 'eBay'] },
+    { slug: 'lg-c4-55', title: 'LG C4 55" OLED evo 4K Smart TV (2024)', brand: 'LG', model: 'OLED55C4PUA', upc: '195174059227', category: 'Televisions', base: 129699, retailers: ['Amazon', 'Best Buy', 'Walmart', 'Costco', 'B&H Photo'] },
+    { slug: 'dyson-v15-detect', title: 'Dyson V15 Detect Cordless Vacuum Cleaner', brand: 'Dyson', model: 'V15 Detect', upc: '885609020235', category: 'Home', base: 74999, retailers: ['Amazon', 'Target', 'Best Buy', 'Walmart', 'eBay'] },
+    { slug: 'instant-pot-duo-6qt', title: 'Instant Pot Duo 7-in-1 Electric Pressure Cooker, 6 Quart', brand: 'Instant Pot', model: 'Duo 60', upc: '810028580657', category: 'Kitchen', base: 9995, retailers: ['Amazon', 'Walmart', 'Target', 'Costco'] },
+    { slug: 'anker-737-powerbank', title: 'Anker 737 Power Bank (PowerCore 24K, 140W)', brand: 'Anker', model: 'A1289', upc: '194644092887', category: 'Accessories', base: 14999, retailers: ['Amazon', 'Walmart', 'Best Buy', 'eBay', 'Newegg'] },
+    { slug: 'ninja-creami', title: 'Ninja CREAMi 7-in-1 Ice Cream & Frozen Dessert Maker', brand: 'Ninja', model: 'NC301', upc: '622356565509', category: 'Kitchen', base: 22999, retailers: ['Amazon', 'Target', 'Walmart', 'Costco', 'eBay'] },
+    { slug: 'samsung-990-pro-2tb', title: 'Samsung 990 PRO 2TB PCIe 4.0 NVMe M.2 SSD', brand: 'Samsung', model: 'MZ-V9P2T0B/AM', upc: '887276613666', category: 'Computer Components', base: 16999, retailers: ['Amazon', 'Newegg', 'Best Buy', 'Walmart', 'B&H Photo'] },
+    { slug: 'kindle-paperwhite-2024', title: 'Amazon Kindle Paperwhite (16 GB, 2024)', brand: 'Amazon', model: 'PW12', upc: '840268952679', category: 'E-Readers', base: 15999, retailers: ['Amazon', 'Best Buy', 'Target', 'eBay'] },
+    { slug: 'bose-qc-ultra', title: 'Bose QuietComfort Ultra Wireless Headphones', brand: 'Bose', model: '880066-0100', upc: '017817846455', category: 'Headphones', base: 42900, retailers: ['Amazon', 'Best Buy', 'Target', 'Walmart', 'eBay'] },
+    { slug: 'roomba-j7-plus', title: 'iRobot Roomba j7+ Self-Emptying Robot Vacuum', brand: 'iRobot', model: 'j7550', upc: '885155023452', category: 'Home', base: 59999, retailers: ['Amazon', 'Target', 'Best Buy', 'Costco', 'eBay'] },
+  ];
+
+  const RETAILERS = {
+    'Amazon': { bias: -0.01, freeShipOver: 3500, ship: 599, days: 2, host: 'www.amazon.com' },
+    'Walmart': { bias: -0.02, freeShipOver: 3500, ship: 699, days: 3, host: 'www.walmart.com' },
+    'Target': { bias: 0.005, freeShipOver: 3500, ship: 599, days: 3, host: 'www.target.com' },
+    'Best Buy': { bias: 0.01, freeShipOver: 3500, ship: 699, days: 3, host: 'www.bestbuy.com' },
+    'eBay': { bias: -0.06, freeShipOver: 0, ship: 0, days: 5, host: 'www.ebay.com' },
+    'B&H Photo': { bias: 0, freeShipOver: 4900, ship: 899, days: 4, host: 'www.bhphotovideo.com' },
+    'Newegg': { bias: -0.015, freeShipOver: 2500, ship: 799, days: 4, host: 'www.newegg.com' },
+    'Costco': { bias: -0.03, freeShipOver: 0, ship: 0, days: 6, host: 'www.costco.com' },
+  };
+
+  const DEFAULT_RETAILERS = ['Amazon', 'Walmart', 'Target', 'Best Buy', 'eBay'];
+
+  /** cyrb53 — a fast, deterministic string hash (stands in for the server's sha1). */
+  function hashStr(str) {
+    let h1 = 0xdeadbeef;
+    let h2 = 0x41c6ce57;
+    for (let i = 0; i < str.length; i += 1) {
+      const ch = str.charCodeAt(i);
+      h1 = Math.imul(h1 ^ ch, 2654435761);
+      h2 = Math.imul(h2 ^ ch, 1597334677);
+    }
+    h1 = Math.imul(h1 ^ (h1 >>> 16), 2246822507) ^ Math.imul(h2 ^ (h2 >>> 13), 3266489909);
+    h2 = Math.imul(h2 ^ (h2 >>> 16), 2246822507) ^ Math.imul(h1 ^ (h1 >>> 13), 3266489909);
+    return (h2 >>> 0) ^ (h1 >>> 0);
+  }
+
+  const seedFrom = (value) => hashStr(String(value)) >>> 0;
+
+  function seededRandom(seed) {
+    let a = seed >>> 0;
+    return function next() {
+      a = (a + 0x6d2b79f5) >>> 0;
+      let t = a;
+      t = Math.imul(t ^ (t >>> 15), t | 1);
+      t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+  }
+
+  const noiseAt = (seed, index) => seededRandom((seed ^ (index * 2654435761)) >>> 0)() - 0.5;
+
+  /** Deterministic price for one retailer on one calendar day. */
+  function priceCents(slug, retailer, day, base) {
+    const profile = RETAILERS[retailer] || { bias: 0 };
+    const rs = seedFrom(slug + ':' + retailer);
+
+    const trend = Math.sin((day + (rs % 120)) / 58) * 0.045;
+    const drift = Math.cos((day + (rs % 300)) / 190) * 0.03;
+
+    const week = Math.floor(day / 7);
+    const position = (day - week * 7) / 7;
+    const wobble =
+      (noiseAt(rs, week) * (1 - position) + noiseAt(rs, week + 1) * position) * 0.04 +
+      noiseAt(rs ^ 0x9e37, day) * 0.003;
+
+    const roll = seededRandom((rs ^ (week * 40503)) >>> 0)();
+    const depth = roll > 0.86 ? 0.05 + (roll - 0.86) * 0.9 : 0;
+    const promo = -depth * (0.65 + 0.35 * Math.sin(Math.PI * position));
+
+    const factor = 1 + profile.bias + trend + drift + wobble + promo;
+    const raw = Math.max(Math.round(base * 0.55), Math.round(base * factor));
+    return Math.round(raw / 100) * 100 - 1;
+  }
+
+  function shippingCents(retailer, price, slug, day) {
+    const profile = RETAILERS[retailer] || { freeShipOver: 3500, ship: 599 };
+    if (profile.freeShipOver === 0 || price >= profile.freeShipOver) return 0;
+    return seededRandom((seedFrom(slug + ':' + retailer + ':ship') ^ day) >>> 0)() > 0.7 ? 0 : profile.ship;
+  }
+
+  function deliveryEstimate(retailer, day) {
+    const profile = RETAILERS[retailer] || { days: 4 };
+    const arrival = new Date((day + profile.days) * DAY_MS);
+    return 'Arrives ' + arrival.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', timeZone: 'UTC' });
+  }
+
+  function offersFor(entry, day) {
+    const list = (entry.retailers && entry.retailers.length ? entry.retailers : DEFAULT_RETAILERS);
+    return list.map((retailer) => {
+      const price = priceCents(entry.slug, retailer, day, entry.base);
+      const ship = shippingCents(retailer, price, entry.slug, day);
+      const stockRoll = seededRandom((seedFrom(entry.slug + ':' + retailer + ':stock') ^ Math.floor(day / 3)) >>> 0)();
+      return {
+        retailer,
+        priceCents: price,
+        shippingCents: ship,
+        totalCents: price + ship,
+        inStock: stockRoll > 0.08,
+        condition: retailer === 'eBay' && stockRoll < 0.35 ? 'refurbished' : 'new',
+        delivery: deliveryEstimate(retailer, day),
+        url: 'https://' + (RETAILERS[retailer] ? RETAILERS[retailer].host : 'example.com') +
+             '/s?k=' + encodeURIComponent(entry.title),
+      };
+    });
+  }
+
+  /** Daily series: blended best plus each retailer's own best, oldest first. */
+  function historyFor(entry, days, today) {
+    const series = [];
+    for (let back = days - 1; back >= 0; back -= 1) {
+      const day = today - back;
+      const offers = offersFor(entry, day).filter((offer) => offer.inStock);
+      if (!offers.length) continue;
+      const byRetailer = {};
+      let best = Infinity;
+      for (const offer of offers) {
+        byRetailer[offer.retailer] = offer.totalCents;
+        if (offer.totalCents < best) best = offer.totalCents;
+      }
+      series.push({ day, date: new Date(day * DAY_MS), best, byRetailer });
+    }
+    return series;
+  }
+
+  function statsFor(entry, days, today) {
+    const window = historyFor(entry, days, today);
+    const full = historyFor(entry, 365, today);
+    const bests = window.map((point) => point.best);
+    const current = bests.length ? bests[bests.length - 1] : null;
+    const allTimeLow = full.length ? Math.min.apply(null, full.map((p) => p.best)) : null;
+    const avg = bests.length ? Math.round(bests.reduce((a, b) => a + b, 0) / bests.length) : null;
+
+    const priorWindow = full.filter((point) => point.day >= today - 10 && point.day <= today - 3);
+    const prior = priorWindow.length ? Math.min.apply(null, priorWindow.map((p) => p.best)) : null;
+    const dropPct = current != null && prior ? Math.round(((prior - current) / prior) * 1000) / 10 : null;
+
+    return {
+      days,
+      current,
+      min: bests.length ? Math.min.apply(null, bests) : null,
+      max: bests.length ? Math.max.apply(null, bests) : null,
+      avg,
+      allTimeLow,
+      isAllTimeLow: current != null && allTimeLow != null && current <= allTimeLow,
+      isBelowAverage: current != null && avg != null && current < avg,
+      percentBelowAverage: current != null && avg ? Math.round(((avg - current) / avg) * 1000) / 10 : null,
+      recentDropPercent: dropPct != null && dropPct > 0 ? dropPct : null,
+      hasRecentDrop: dropPct != null && dropPct >= 3,
+      dataPoints: bests.length,
+    };
+  }
+
+  // --- matching ------------------------------------------------------
+
+  const NOISE = new Set(['the', 'and', 'with', 'for', 'new', 'model', 'inch', 'in', 'of', 'a', 'an', 'wireless', 'bluetooth', 'edition', 'gen', 'generation']);
+  const tokenize = (value) => String(value || '').toLowerCase().split(/[^a-z0-9]+/).filter((t) => t.length > 1);
+
+  function synthesize(query) {
+    const title = String(query).replace(/[^a-z0-9 ]/gi, ' ').replace(/\s+/g, ' ').trim()
+      .replace(/\b[a-z]/g, (c) => c.toUpperCase()) || 'Unknown Product';
+    const seed = seedFrom('synthetic:' + title.toLowerCase());
+    const rand = seededRandom(seed);
+    return {
+      slug: 'synthetic-' + seed.toString(16),
+      title,
+      brand: title.split(' ')[0],
+      model: null,
+      upc: null,
+      category: 'General',
+      base: Math.round((1500 + rand() * 60000) / 100) * 100 - 1,
+      retailers: DEFAULT_RETAILERS,
+      synthesized: true,
+    };
+  }
+
+  function classify(input) {
+    const value = String(input || '').trim();
+    if (!value) return 'empty';
+    if (/^https?:\/\//i.test(value)) return 'url';
+    if (/^\d{8,14}$/.test(value)) return 'barcode';
+    return 'text';
+  }
+
+  function search(rawQuery) {
+    const kind = classify(rawQuery);
+    if (kind === 'empty') return { kind, entries: [] };
+
+    let query = String(rawQuery).trim();
+
+    if (kind === 'barcode') {
+      const exact = CATALOG.find((entry) => entry.upc === query);
+      return { kind, entries: [exact || CATALOG[seedFrom(query) % CATALOG.length]] };
+    }
+
+    if (kind === 'url') {
+      let parsed;
+      try { parsed = new URL(query); } catch (error) { return { kind, entries: [] }; }
+      query = parsed.pathname.split('/')
+        .filter((part) => part && !/^(dp|gp|product|ip|p|itm|site)$/i.test(part) && !/^[A-Z0-9]{8,}$/.test(part))
+        .join(' ').replace(/[-_+]/g, ' ').trim() || parsed.hostname;
+    }
+
+    const tokens = tokenize(query).filter((token) => !NOISE.has(token));
+    const scored = CATALOG.map((entry) => {
+      const hay = tokenize([entry.title, entry.brand, entry.model, entry.category].join(' '));
+      let score = 0;
+      for (const token of tokens) {
+        if (hay.includes(token)) score += 2;
+        else if (hay.some((h) => h.startsWith(token) || token.startsWith(h))) score += 1;
+      }
+      return { entry, score };
+    }).filter((item) => item.score > 0).sort((a, b) => b.score - a.score).slice(0, 8);
+
+    return { kind, entries: scored.length ? scored.map((item) => item.entry) : [synthesize(query)] };
+  }
+
+  const bySlug = (slug) => CATALOG.find((entry) => entry.slug === slug) || null;
+
+  // =====================================================================
+  // Local state — this demo has no backend, so the watchlist, alerts and
+  // recents live in this browser only.
+  // =====================================================================
+
+  const KEY = 'pricescout.demo.v1';
+
+  const defaults = {
+    watches: {},          // slug -> { targetCents, createdAt, lastAlertCents }
+    notifications: [],    // { id, slug, type, title, body, priceCents, retailer, url, at, read }
+    recentSearches: [],
+    recentlyViewed: [],   // slugs
+    dayOffset: 0,         // demo control: jump the calendar forward
+    customEntries: {},    // synthesized products the user searched for
+  };
+
+  let state = load();
+
+  function load() {
+    try {
+      const raw = localStorage.getItem(KEY);
+      return raw ? Object.assign({}, defaults, JSON.parse(raw)) : Object.assign({}, defaults);
+    } catch (error) {
+      return Object.assign({}, defaults);
+    }
+  }
+
+  function save() {
+    try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (error) { /* private mode */ }
+  }
+
+  const today = () => Math.floor(Date.now() / DAY_MS) + state.dayOffset;
+
+  function entryFor(slug) {
+    return bySlug(slug) || state.customEntries[slug] || null;
+  }
+
+  function rememberEntry(entry) {
+    if (!bySlug(entry.slug)) {
+      state.customEntries[entry.slug] = entry;
+    }
+  }
+
+  // --- alerts --------------------------------------------------------
+
+  const REALERT_DAYS = 7;
+
+  /** Evaluates every watch and appends notifications. Returns how many fired. */
+  function evaluateWatches() {
+    const day = today();
+    let created = 0;
+
+    for (const slug of Object.keys(state.watches)) {
+      const watch = state.watches[slug];
+      const entry = entryFor(slug);
+      if (!entry) continue;
+
+      const offers = offersFor(entry, day).filter((offer) => offer.inStock)
+        .sort((a, b) => a.totalCents - b.totalCents);
+      const best = offers[0];
+      if (!best) continue;
+
+      const stats = statsFor(entry, 90, day);
+      let alert = null;
+
+      if (watch.targetCents != null && best.totalCents <= watch.targetCents) {
+        alert = { type: 'target_hit', title: 'Target price reached', reason: 'Now at or below your ' + money(watch.targetCents) + ' target.' };
+      } else if (stats.isAllTimeLow) {
+        alert = { type: 'all_time_low', title: 'Lowest price we have seen', reason: 'This is the lowest total price in the tracked history.' };
+      } else if (stats.avg != null && stats.dataPoints >= 5 && best.totalCents <= Math.round(stats.avg * 0.98)) {
+        alert = { type: 'below_average', title: 'Below its usual price', reason: stats.percentBelowAverage + '% below the 90-day average of ' + money(stats.avg) + '.' };
+      }
+
+      if (!alert) continue;
+
+      // Suppress repeats unless the price improves or a week has passed.
+      const improved = watch.lastAlertCents == null || best.totalCents < watch.lastAlertCents;
+      const stale = watch.lastAlertDay == null || day - watch.lastAlertDay >= REALERT_DAYS;
+      if (!improved && !stale) continue;
+
+      state.notifications.unshift({
+        id: 'n' + Date.now() + Math.random().toString(16).slice(2, 6),
+        slug,
+        type: alert.type,
+        title: alert.title,
+        body: entry.title + ' — ' + money(best.totalCents) + ' at ' + best.retailer + '. ' + alert.reason,
+        priceCents: best.totalCents,
+        retailer: best.retailer,
+        url: best.url,
+        at: Date.now(),
+        read: false,
+      });
+      watch.lastAlertCents = best.totalCents;
+      watch.lastAlertDay = day;
+      created += 1;
+    }
+
+    state.notifications = state.notifications.slice(0, 50);
+    if (created) save();
+    return created;
+  }
+
+  const unreadCount = () => state.notifications.filter((n) => !n.read).length;
+
+  // =====================================================================
+  // Formatting
+  // =====================================================================
+
+  const currency = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' });
+  const money = (cents) => (cents == null || Number.isNaN(cents) ? '—' : currency.format(cents / 100));
+
+  function moneyShort(cents) {
+    const dollars = cents / 100;
+    if (dollars >= 1000) return '$' + (dollars / 1000).toFixed(dollars >= 10000 ? 0 : 1) + 'k';
+    return '$' + Math.round(dollars);
+  }
+
+  const shortDate = (date) => date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', timeZone: 'UTC' });
+  const longDate = (date) => date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric', timeZone: 'UTC' });
+
+  function relativeTime(ms) {
+    const minutes = Math.round((Date.now() - ms) / 60000);
+    if (minutes < 1) return 'just now';
+    if (minutes < 60) return minutes + 'm ago';
+    const hours = Math.round(minutes / 60);
+    if (hours < 24) return hours + 'h ago';
+    return Math.round(hours / 24) + 'd ago';
+  }
+
+  function initials(entry) {
+    const words = String(entry.brand || entry.title || '?').split(/\s+/).filter(Boolean);
+    return (words.length > 1 ? words.slice(0, 2).map((w) => w[0]).join('') : words[0].slice(0, 2)).toUpperCase();
+  }
+
+  function parseMoney(input) {
+    const match = String(input || '').replace(/[, ]/g, '').match(/\d+(\.\d+)?/);
+    return match ? Math.round(parseFloat(match[0]) * 100) : null;
+  }
+
+  // =====================================================================
+  // DOM helpers
+  // =====================================================================
+
+  function el(tag, props, children) {
+    const node = document.createElement(tag);
+    if (props) {
+      for (const key of Object.keys(props)) {
+        const value = props[key];
+        if (value == null || value === false) continue;
+        if (key === 'class') node.className = value;
+        else if (key === 'text') node.textContent = value;
+        else if (key === 'html') node.innerHTML = value;
+        else if (key.startsWith('on')) node.addEventListener(key.slice(2).toLowerCase(), value);
+        else node.setAttribute(key, value === true ? '' : value);
+      }
+    }
+    for (const child of [].concat(children || [])) {
+      if (child == null || child === false) continue;
+      node.appendChild(typeof child === 'string' ? document.createTextNode(child) : child);
+    }
+    return node;
+  }
+
+  const icon = (paths, size) => {
+    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    svg.setAttribute('viewBox', '0 0 24 24');
+    svg.setAttribute('width', size || 20);
+    svg.setAttribute('height', size || 20);
+    svg.setAttribute('fill', 'none');
+    svg.setAttribute('stroke', 'currentColor');
+    svg.setAttribute('stroke-width', '1.75');
+    svg.setAttribute('stroke-linecap', 'round');
+    svg.setAttribute('stroke-linejoin', 'round');
+    svg.setAttribute('aria-hidden', 'true');
+    svg.innerHTML = paths;
+    return svg;
+  };
+
+  const ICONS = {
+    search: '<circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/>',
+    camera: '<path d="M3 8.5A2.5 2.5 0 0 1 5.5 6h1.7a1 1 0 0 0 .83-.45l.94-1.4A1 1 0 0 1 9.8 3.7h4.4a1 1 0 0 1 .83.45l.94 1.4A1 1 0 0 0 16.8 6h1.7A2.5 2.5 0 0 1 21 8.5v8A2.5 2.5 0 0 1 18.5 19h-13A2.5 2.5 0 0 1 3 16.5z"/><circle cx="12" cy="12.5" r="3.2"/>',
+    home: '<path d="M4 10.5 12 4l8 6.5"/><path d="M6 10v9.5h12V10"/>',
+    bookmark: '<path d="M6.5 4.5h11a1 1 0 0 1 1 1v14l-6.5-4-6.5 4v-14a1 1 0 0 1 1-1z"/>',
+    bell: '<path d="M18 9a6 6 0 1 0-12 0c0 4.5-1.5 6-2 6.5h16c-.5-.5-2-2-2-6.5"/><path d="M10.5 19a1.8 1.8 0 0 0 3 0"/>',
+    info: '<circle cx="12" cy="12" r="8.5"/><path d="M12 11v5.5M12 7.8v.4"/>',
+    check: '<path d="m5 12.5 4.5 4.5L19 7.5"/>',
+    down: '<path d="M12 4.5v14"/><path d="m6.5 13 5.5 5.5L17.5 13"/>',
+    trend: '<path d="M4 17.5 9.5 12l3.5 3.5L20 8"/><path d="M15.5 8H20v4.5"/>',
+    external: '<path d="M14 4.5h5.5V10"/><path d="M19 5 11 13"/><path d="M18 14.5v4a1 1 0 0 1-1 1H5.5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h4"/>',
+    trash: '<path d="M4.5 6.5h15M9.5 6.5V5a1 1 0 0 1 1-1h3a1 1 0 0 1 1 1v1.5"/><path d="M6.5 6.5 7.4 19a1 1 0 0 0 1 .9h7.2a1 1 0 0 0 1-.9l.9-12.5"/>',
+    back: '<path d="M15 5.5 8.5 12l6.5 6.5"/>',
+    clock: '<circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/>',
+  };
+
+  function chip(label, kind, iconName) {
+    return el('span', { class: 'chip' + (kind ? ' chip-' + kind : '') }, [
+      iconName ? icon(ICONS[iconName], 13) : null,
+      label,
+    ]);
+  }
+
+  // =====================================================================
+  // Chart — hand-drawn SVG (no chart library can be loaded here).
+  // Colour follows the retailer, never its rank, so changing the range
+  // never repaints the series.
+  // =====================================================================
+
+  const SERIES_VARS = ['--s1', '--s2', '--s3', '--s4', '--s5', '--s6', '--s7', '--s8'];
+  const NICE_STEPS = [100, 200, 250, 500, 1000, 2000, 2500, 5000, 10000, 20000, 25000, 50000];
+
+  function niceTicks(min, max, target) {
+    const low = Math.max(0, Math.floor(min));
+    const high = Math.ceil(max);
+    const span = Math.max(high - low, 1);
+    const step = NICE_STEPS.find((candidate) => span / candidate <= (target || 4)) || Math.ceil(span / (target || 4));
+    const ticks = [];
+    for (let value = Math.ceil(low / step) * step; value <= high; value += step) ticks.push(value);
+    return { low, high, ticks };
+  }
+
+  function retailerColors(entry) {
+    const list = (entry.retailers || DEFAULT_RETAILERS).slice().sort();
+    const map = {};
+    list.forEach((retailer, index) => {
+      if (index < SERIES_VARS.length) map[retailer] = 'var(' + SERIES_VARS[index] + ')';
+    });
+    return map;
+  }
+
+  function drawChart(host, options) {
+    const { series, mode, colors, avg, target } = options;
+    host.textContent = '';
+    if (!series || series.length < 2) {
+      host.appendChild(el('p', { class: 'empty', text: 'Not enough history to chart yet.' }));
+      return;
+    }
+
+    const width = Math.max(host.clientWidth || 320, 260);
+    const height = width < 520 ? 220 : 280;
+    const padding = { top: 18, right: 12, bottom: 26, left: 52 };
+    const plotW = width - padding.left - padding.right;
+    const plotH = height - padding.top - padding.bottom;
+
+    const retailers = mode === 'retailer' ? Object.keys(colors) : [];
+    const values = [];
+    for (const point of series) {
+      if (mode === 'retailer') {
+        for (const retailer of retailers) {
+          if (point.byRetailer[retailer] != null) values.push(point.byRetailer[retailer]);
+        }
+      } else {
+        values.push(point.best);
+      }
+    }
+    const rawMin = Math.min.apply(null, values);
+    const rawMax = Math.max.apply(null, values);
+    const pad = Math.max((rawMax - rawMin) * 0.12, rawMax * 0.02);
+    const scale = niceTicks(rawMin - pad, rawMax + pad, 4);
+
+    const x = (index) => padding.left + (index * plotW) / (series.length - 1);
+    const y = (value) => padding.top + ((scale.high - value) / (scale.high - scale.low || 1)) * plotH;
+
+    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    svg.setAttribute('viewBox', '0 0 ' + width + ' ' + height);
+    svg.setAttribute('width', width);
+    svg.setAttribute('height', height);
+    svg.setAttribute('role', 'img');
+    svg.setAttribute('aria-label',
+      mode === 'retailer'
+        ? 'Price per retailer over ' + series.length + ' days'
+        : 'Best total price over ' + series.length + ' days, from ' + money(series[0].best) + ' to ' + money(series[series.length - 1].best));
+
+    const ns = 'http://www.w3.org/2000/svg';
+    const add = (tag, attrs) => {
+      const node = document.createElementNS(ns, tag);
+      for (const key of Object.keys(attrs)) node.setAttribute(key, attrs[key]);
+      svg.appendChild(node);
+      return node;
+    };
+
+    // Gridlines + y labels — solid hairlines, one shade off the surface.
+    for (const tick of scale.ticks) {
+      add('line', { x1: padding.left, x2: width - padding.right, y1: y(tick), y2: y(tick), stroke: 'var(--line)', 'stroke-width': 1 });
+      const label = add('text', { x: padding.left - 10, y: y(tick) + 4, 'text-anchor': 'end', fill: 'var(--muted)', 'font-size': 11 });
+      label.textContent = moneyShort(tick);
+    }
+
+    // Baseline + x labels.
+    add('line', { x1: padding.left, x2: width - padding.right, y1: height - padding.bottom, y2: height - padding.bottom, stroke: 'var(--baseline)', 'stroke-width': 1 });
+    const tickCount = width < 420 ? 4 : 6;
+    const step = Math.max(1, Math.floor((series.length - 1) / (tickCount - 1)));
+    for (let index = 0; index < series.length; index += step) {
+      const label = add('text', { x: x(index), y: height - 8, 'text-anchor': index === 0 ? 'start' : 'middle', fill: 'var(--muted)', 'font-size': 11 });
+      label.textContent = shortDate(series[index].date);
+    }
+
+    // Threshold rules — keyed below the plot, never labelled inline.
+    if (mode === 'best' && avg != null && avg >= scale.low && avg <= scale.high) {
+      add('line', { x1: padding.left, x2: width - padding.right, y1: y(avg), y2: y(avg), stroke: 'var(--muted)', 'stroke-width': 1.5, 'stroke-dasharray': '4 4' });
+    }
+    if (target != null && target >= scale.low && target <= scale.high) {
+      add('line', { x1: padding.left, x2: width - padding.right, y1: y(target), y2: y(target), stroke: 'var(--good)', 'stroke-width': 1.5, 'stroke-dasharray': '4 4' });
+    }
+
+    function linePath(getValue) {
+      let d = '';
+      let pen = false;
+      series.forEach((point, index) => {
+        const value = getValue(point);
+        if (value == null) { pen = false; return; }
+        d += (pen ? ' L' : ' M') + x(index).toFixed(1) + ' ' + y(value).toFixed(1);
+        pen = true;
+      });
+      return d.trim();
+    }
+
+    if (mode === 'retailer') {
+      for (const retailer of retailers) {
+        const d = linePath((point) => point.byRetailer[retailer]);
+        if (d) add('path', { d, fill: 'none', stroke: colors[retailer], 'stroke-width': 2, 'stroke-linejoin': 'round', 'stroke-linecap': 'round' });
+      }
+    } else {
+      add('path', { d: linePath((point) => point.best), fill: 'none', stroke: 'var(--s1)', 'stroke-width': 2, 'stroke-linejoin': 'round', 'stroke-linecap': 'round' });
+
+      // Direct-label the low point only — the current price is the hero above.
+      let lowIndex = 0;
+      series.forEach((point, index) => { if (point.best < series[lowIndex].best) lowIndex = index; });
+      const lowPoint = series[lowIndex];
+      add('circle', { cx: x(lowIndex), cy: y(lowPoint.best), r: 4, fill: 'var(--s1)', stroke: 'var(--surface)', 'stroke-width': 2 });
+      const anchorEnd = lowIndex > series.length * 0.7;
+      const label = add('text', {
+        x: x(lowIndex) + (anchorEnd ? -9 : 0),
+        y: y(lowPoint.best) + (anchorEnd ? 4 : -11),
+        'text-anchor': anchorEnd ? 'end' : 'middle',
+        fill: 'var(--ink)', 'font-size': 11, 'font-weight': 650,
+      });
+      label.textContent = 'low ' + money(lowPoint.best);
+    }
+
+    const crosshair = add('line', { x1: 0, x2: 0, y1: padding.top, y2: height - padding.bottom, stroke: 'var(--baseline)', 'stroke-width': 1, opacity: 0 });
+    const markers = document.createElementNS(ns, 'g');
+    svg.appendChild(markers);
+
+    host.appendChild(svg);
+
+    const tooltip = el('div', { class: 'tooltip', role: 'status' });
+    host.appendChild(tooltip);
+
+    function hide() {
+      crosshair.setAttribute('opacity', 0);
+      markers.textContent = '';
+      tooltip.setAttribute('data-visible', 'false');
+    }
+
+    function move(event) {
+      const rect = svg.getBoundingClientRect();
+      const px = ((event.clientX - rect.left) / rect.width) * width;
+      const index = Math.max(0, Math.min(series.length - 1, Math.round(((px - padding.left) / plotW) * (series.length - 1))));
+      const point = series[index];
+
+      crosshair.setAttribute('x1', x(index));
+      crosshair.setAttribute('x2', x(index));
+      crosshair.setAttribute('opacity', 1);
+
+      markers.textContent = '';
+      const rows = [];
+      if (mode === 'retailer') {
+        for (const retailer of retailers) {
+          const value = point.byRetailer[retailer];
+          if (value == null) continue;
+          rows.push({ label: retailer, value, color: colors[retailer] });
+        }
+      } else {
+        rows.push({ label: 'Best price', value: point.best, color: 'var(--s1)' });
+      }
+      rows.sort((a, b) => a.value - b.value);
+
+      for (const row of rows) {
+        const dot = document.createElementNS(ns, 'circle');
+        dot.setAttribute('cx', x(index));
+        dot.setAttribute('cy', y(row.value));
+        dot.setAttribute('r', 4);
+        dot.setAttribute('fill', row.color);
+        dot.setAttribute('stroke', 'var(--surface)');
+        dot.setAttribute('stroke-width', 2);
+        markers.appendChild(dot);
+      }
+
+      tooltip.textContent = '';
+      tooltip.appendChild(el('p', { style: 'font-weight:650;margin-bottom:6px', text: longDate(point.date) }));
+      rows.forEach((row, position) => {
+        tooltip.appendChild(el('div', { class: 'tt-row' }, [
+          el('span', { class: 'row', style: 'gap:6px;color:var(--ink-2)' }, [
+            el('span', { class: 'swatch', style: 'background:' + row.color }),
+            row.label,
+          ]),
+          el('span', { class: 'tabular', style: position === 0 ? 'font-weight:650' : 'color:var(--ink-2)', text: money(row.value) }),
+        ]));
+      });
+      tooltip.appendChild(el('p', { class: 'muted', style: 'margin-top:6px;font-size:11px', text: 'Total incl. shipping' }));
+
+      const hostWidth = host.clientWidth;
+      const ttWidth = tooltip.offsetWidth || 160;
+      const left = Math.max(4, Math.min(hostWidth - ttWidth - 4, (x(index) / width) * hostWidth - ttWidth / 2));
+      tooltip.style.left = left + 'px';
+      tooltip.style.top = '6px';
+      tooltip.setAttribute('data-visible', 'true');
+    }
+
+    svg.addEventListener('pointermove', move);
+    svg.addEventListener('pointerdown', move);
+    svg.addEventListener('pointerleave', hide);
+  }
+
+  // =====================================================================
+  // Views
+  // =====================================================================
+
+  const view = document.getElementById('view');
+  let route = { name: 'search', query: '', slug: null };
+
+  const NAV = [
+    { name: 'search', label: 'Search', icon: 'home' },
+    { name: 'watchlist', label: 'Watchlist', icon: 'bookmark' },
+    { name: 'alerts', label: 'Alerts', icon: 'bell', badge: true },
+    { name: 'about', label: 'About', icon: 'info' },
+  ];
+
+  function go(next) {
+    route = Object.assign({ name: 'search', query: '', slug: null }, next);
+    window.scrollTo({ top: 0, behavior: 'instant' in window ? 'instant' : 'auto' });
+    render();
+  }
+
+  function renderNav() {
+    const top = document.getElementById('topnav');
+    const bottom = document.getElementById('tabbar');
+    top.textContent = '';
+    bottom.textContent = '';
+    const unread = unreadCount();
+
+    for (const item of NAV) {
+      const active = route.name === item.name || (item.name === 'search' && route.name === 'product');
+
+      const badge = item.badge && unread ? el('span', { class: 'dot-badge', text: unread > 9 ? '9+' : String(unread) }) : null;
+
+      top.appendChild(el('button', {
+        class: 'navlink',
+        type: 'button',
+        'aria-current': active ? 'page' : null,
+        onclick: () => go({ name: item.name }),
+      }, [
+        el('span', { class: 'tab-icon' }, [icon(ICONS[item.icon], 19), badge]),
+        item.label,
+      ]));
+
+      const badge2 = item.badge && unread ? el('span', { class: 'dot-badge', text: unread > 9 ? '9+' : String(unread) }) : null;
+      bottom.appendChild(el('button', {
+        class: 'tab',
+        type: 'button',
+        'aria-current': active ? 'page' : null,
+        onclick: () => go({ name: item.name }),
+      }, [
+        el('span', { class: 'tab-icon' }, [icon(ICONS[item.icon], 23), badge2]),
+        item.label,
+      ]));
+    }
+  }
+
+  function demoBanner() {
+    return el('div', { class: 'notice' }, [
+      icon(ICONS.info, 16),
+      el('p', {
+        html: '<strong>Sample data.</strong> Every price, retailer and history point here is generated in your browser — no live retailer data is used. This is a static demo of PriceScout; the full app swaps in a live pricing API behind the same interface.',
+      }),
+    ]);
+  }
+
+  // --- search view ---------------------------------------------------
+
+  function searchView() {
+    const wrap = el('div', { class: 'stack' });
+
+    wrap.appendChild(el('h1', { text: 'Find the cheapest place to buy it' }));
+
+    const input = el('input', {
+      class: 'input',
+      type: 'search',
+      value: route.query || '',
+      placeholder: 'Product name, link, or barcode',
+      'aria-label': 'Search for a product by name, link or barcode',
+      enterkeyhint: 'search',
+    });
+
+    const scanInput = el('input', { type: 'file', accept: 'image/*', capture: 'environment', style: 'display:none' });
+    const scanNote = el('p', { class: 'xs', style: 'color:var(--critical)' });
+    scanNote.hidden = true;
+
+    const form = el('form', {
+      class: 'searchbar',
+      onsubmit: (event) => { event.preventDefault(); submit(input.value); },
+    }, [
+      el('div', { class: 'search-field' }, [icon(ICONS.search, 19), input]),
+      el('button', {
+        class: 'btn btn-secondary', type: 'button', 'aria-label': 'Scan a barcode photo',
+        onclick: () => scanInput.click(),
+      }, [icon(ICONS.camera, 19)]),
+      el('button', { class: 'btn btn-primary', type: 'submit' }, ['Search']),
+    ]);
+
+    scanInput.addEventListener('change', async () => {
+      const file = scanInput.files && scanInput.files[0];
+      scanInput.value = '';
+      if (!file) return;
+      scanNote.hidden = true;
+      try {
+        const code = await decodeBarcode(file);
+        input.value = code;
+        submit(code);
+      } catch (error) {
+        scanNote.textContent = error.message;
+        scanNote.hidden = false;
+      }
+    });
+
+    wrap.appendChild(form);
+    wrap.appendChild(scanNote);
+    wrap.appendChild(el('p', { class: 'xs muted', text: 'Type a product name, paste a retailer link, or scan a barcode photo.' }));
+    wrap.appendChild(demoBanner());
+
+    function submit(value) {
+      const query = String(value || '').trim();
+      if (!query) return;
+      state.recentSearches = [query].concat(state.recentSearches.filter((q) => q !== query)).slice(0, 8);
+      save();
+      go({ name: 'search', query });
+    }
+
+    if (route.query) {
+      const { kind, entries } = search(route.query);
+      entries.forEach(rememberEntry);
+      save();
+
+      wrap.appendChild(el('h2', { class: 'sm ink-2', text: entries.length + (entries.length === 1 ? ' match' : ' matches') + (kind === 'barcode' ? ' for that barcode' : kind === 'url' ? ' for that link' : '') }));
+
+      if (!entries.length) {
+        wrap.appendChild(el('p', { class: 'card pad empty', text: 'Nothing matched that. Try a brand and model.' }));
+      }
+
+      const list = el('div', { class: 'stack-sm' });
+      for (const entry of entries) {
+        const day = today();
+        const offers = offersFor(entry, day).filter((offer) => offer.inStock).sort((a, b) => a.totalCents - b.totalCents);
+        const stats = statsFor(entry, 90, day);
+        const best = offers[0];
+
+        const badges = el('div', { class: 'row wrap', style: 'gap:6px;margin-top:6px' }, [
+          stats.isAllTimeLow ? chip('All-time low', 'good', 'check') : null,
+          stats.hasRecentDrop ? chip(stats.recentDropPercent + '% this week', 'good', 'down') : null,
+          chip('sample data'),
+        ]);
+
+        list.appendChild(el('button', { class: 'result', type: 'button', onclick: () => openProduct(entry.slug) }, [
+          el('span', { class: 'thumb', style: 'width:60px;height:60px;font-size:15px', text: initials(entry) }),
+          el('span', { class: 'grow' }, [
+            el('span', { class: 'result-title', text: entry.title }),
+            el('span', { class: 'xs muted', style: 'display:block;margin-top:2px', text: offers.length + ' retailers' + (best ? ' · cheapest at ' + best.retailer : '') }),
+            badges,
+          ]),
+          el('span', { style: 'text-align:right;flex-shrink:0' }, [
+            el('span', { class: 'price-lg tabular', style: 'display:block', text: money(best ? best.totalCents : null) }),
+            el('span', { class: 'xs muted', text: 'total' }),
+          ]),
+        ]));
+      }
+      wrap.appendChild(list);
+    } else {
+      if (state.recentSearches.length) {
+        wrap.appendChild(el('div', { class: 'stack-sm' }, [
+          el('div', { class: 'row-between' }, [
+            el('h2', { class: 'sm ink-2', text: 'Recent searches' }),
+            el('button', {
+              class: 'btn btn-ghost btn-sm', type: 'button', text: 'Clear',
+              onclick: () => { state.recentSearches = []; save(); render(); },
+            }),
+          ]),
+          el('div', { class: 'row wrap', style: 'gap:6px' },
+            state.recentSearches.map((term) => el('button', {
+              class: 'chip', type: 'button', style: 'cursor:pointer',
+              onclick: () => go({ name: 'search', query: term }),
+            }, [icon(ICONS.search, 12), term]))),
+        ]));
+      }
+
+      const viewed = state.recentlyViewed.map(entryFor).filter(Boolean);
+      if (viewed.length) {
+        wrap.appendChild(el('div', { class: 'stack-sm' }, [
+          el('h2', { class: 'sm ink-2', text: 'Recently viewed' }),
+          el('div', { class: 'stack-sm' }, viewed.map((entry) => el('button', {
+            class: 'result', type: 'button', style: 'align-items:center', onclick: () => openProduct(entry.slug),
+          }, [
+            el('span', { class: 'thumb', style: 'width:44px;height:44px;font-size:13px', text: initials(entry) }),
+            el('span', { class: 'grow sm', style: 'font-weight:600', text: entry.title }),
+          ]))),
+        ]));
+      }
+
+      if (!state.recentSearches.length && !viewed.length) {
+        wrap.appendChild(el('div', { class: 'card pad stack-sm' }, [
+          el('h2', { class: 'sm', text: 'Try one of these' }),
+          el('div', { class: 'row wrap', style: 'gap:6px' },
+            ['Sony WH-1000XM5', 'AirPods Pro', 'Nintendo Switch OLED', 'Dyson V15', '045496882730'].map((example) =>
+              el('button', { class: 'chip', type: 'button', style: 'cursor:pointer', text: example, onclick: () => go({ name: 'search', query: example }) }))),
+        ]));
+      }
+    }
+
+    return wrap;
+  }
+
+  /** Native BarcodeDetector where available; otherwise ask for the digits. */
+  async function decodeBarcode(file) {
+    if (!('BarcodeDetector' in window)) {
+      throw new Error("This browser can't read barcode images — type the number under the barcode instead.");
+    }
+    const url = URL.createObjectURL(file);
+    try {
+      const image = await new Promise((resolve, reject) => {
+        const img = new Image();
+        img.onload = () => resolve(img);
+        img.onerror = () => reject(new Error('That file could not be opened as an image.'));
+        img.src = url;
+      });
+      const supported = await window.BarcodeDetector.getSupportedFormats();
+      const formats = ['ean_13', 'ean_8', 'upc_a', 'upc_e', 'code_128'].filter((f) => supported.includes(f));
+      const detector = new window.BarcodeDetector(formats.length ? { formats } : undefined);
+      const results = await detector.detect(image);
+      if (!results.length) {
+        throw new Error("Couldn't read a barcode in that image. Try a straight-on, well-lit photo — or type the number in.");
+      }
+      return results[0].rawValue.replace(/\D/g, '') || results[0].rawValue;
+    } finally {
+      URL.revokeObjectURL(url);
+    }
+  }
+
+  function openProduct(slug) {
+    state.recentlyViewed = [slug].concat(state.recentlyViewed.filter((s) => s !== slug)).slice(0, 12);
+    save();
+    go({ name: 'product', slug });
+  }
+
+  // --- product view --------------------------------------------------
+
+  let chartDays = 90;
+  let chartMode = 'best';
+  let chartTable = false;
+
+  function productView() {
+    const entry = entryFor(route.slug);
+    if (!entry) {
+      return el('div', { class: 'card pad empty' }, ['That product is no longer in this browser. ',
+        el('button', { class: 'btn btn-secondary btn-sm', type: 'button', text: 'Back to search', onclick: () => go({ name: 'search' }) })]);
+    }
+
+    const day = today();
+    const offers = offersFor(entry, day).sort((a, b) => {
+      if (a.inStock !== b.inStock) return a.inStock ? -1 : 1;
+      return a.totalCents - b.totalCents;
+    });
+    const bestOffer = offers.find((offer) => offer.inStock) || null;
+    const stats = statsFor(entry, chartDays, day);
+    const watch = state.watches[entry.slug] || null;
+
+    const wrap = el('div', { class: 'stack' });
+
+    wrap.appendChild(el('button', {
+      class: 'btn btn-ghost btn-sm', type: 'button', style: 'align-self:flex-start;margin-left:-6px',
+      onclick: () => go({ name: 'search', query: route.query || '' }),
+    }, [icon(ICONS.back, 16), 'Back']));
+
+    // Header
+    wrap.appendChild(el('article', { class: 'card pad' }, [
+      el('div', { class: 'row', style: 'align-items:flex-start;gap:14px' }, [
+        el('span', { class: 'thumb', style: 'width:76px;height:76px;font-size:19px', text: initials(entry) }),
+        el('div', { class: 'grow stack-sm' }, [
+          el('h1', { style: 'font-size:19px;line-height:1.3', text: entry.title }),
+          el('p', { class: 'xs muted', text: [entry.brand, entry.model, entry.upc ? 'UPC ' + entry.upc : null].filter(Boolean).join(' · ') }),
+          el('div', { class: 'row wrap', style: 'gap:6px' }, [chip('sample data'), chip('checked just now', null, 'clock')]),
+        ]),
+      ]),
+    ]));
+
+    // Summary before detail
+    wrap.appendChild(el('section', { class: 'card pad stack-sm', 'aria-label': 'Price summary' }, [
+      el('div', { class: 'row-between wrap', style: 'align-items:flex-end' }, [
+        el('div', {}, [
+          el('p', { class: 'xs muted', text: 'Best price right now' }),
+          el('p', { class: 'tabular', style: 'font-size:30px;font-weight:700;letter-spacing:-0.03em', text: money(stats.current) }),
+          bestOffer ? el('p', { class: 'sm ink-2', text: 'at ' + bestOffer.retailer + (bestOffer.shippingCents === 0 ? ' · free shipping' : ' · +' + money(bestOffer.shippingCents) + ' shipping') }) : null,
+        ]),
+        el('div', { class: 'row wrap', style: 'gap:6px' }, [
+          stats.isAllTimeLow ? chip('All-time low', 'good', 'check') : null,
+          stats.hasRecentDrop ? chip('Dropped ' + stats.recentDropPercent + '% this week', 'good', 'down') : null,
+          stats.isBelowAverage && !stats.isAllTimeLow ? chip(stats.percentBelowAverage + '% below average', null, 'trend') : null,
+        ]),
+      ]),
+      el('div', { class: 'tiles', style: 'margin-top:6px' }, [
+        tile(chartDays + 'd low', money(stats.min)),
+        tile(chartDays + 'd avg', money(stats.avg)),
+        tile(chartDays + 'd high', money(stats.max)),
+      ]),
+    ]));
+
+    wrap.appendChild(offersSection(offers, bestOffer));
+    wrap.appendChild(chartSection(entry, stats, watch));
+    wrap.appendChild(trackSection(entry, stats, watch));
+    wrap.appendChild(demoBanner());
+
+    return wrap;
+  }
+
+  function tile(label, value) {
+    return el('div', { class: 'tile' }, [
+      el('p', { class: 'micro', text: label }),
+      el('p', { class: 'tile-value', text: value }),
+    ]);
+  }
+
+  function conditionNote(offer) {
+    const notes = [];
+    if (!offer.inStock) notes.push('Out of stock');
+    if (offer.condition !== 'new') notes.push(offer.condition);
+    notes.push('sample data');
+    return el('p', { class: 'xs muted', style: 'text-transform:capitalize', text: notes.join(' · ') });
+  }
+
+  function buyLink(offer, full) {
+    return el('a', {
+      class: 'btn btn-secondary btn-sm' + (full ? '' : ''),
+      style: full ? 'width:100%' : '',
+      href: offer.url, target: '_blank', rel: 'noopener noreferrer nofollow',
+    }, ['Buy at ' + offer.retailer, icon(ICONS.external, 13)]);
+  }
+
+  function offersSection(offers, bestOffer) {
+    const section = el('section', { class: 'card', 'aria-labelledby': 'offers-heading' });
+
+    section.appendChild(el('div', { class: 'row-between', style: 'padding:16px 16px 4px' }, [
+      el('h2', { id: 'offers-heading', text: 'Compare ' + offers.length + ' retailers' }),
+      el('p', { class: 'xs muted', text: 'Sorted by total price' }),
+    ]));
+
+    const mobile = el('div', { class: 'offers-mobile' });
+    for (const offer of offers) {
+      mobile.appendChild(el('div', { class: 'offer-row', style: offer.inStock ? '' : 'opacity:0.6' }, [
+        el('div', { class: 'row-between', style: 'align-items:flex-start' }, [
+          el('div', { class: 'grow' }, [
+            el('div', { class: 'row wrap', style: 'gap:8px' }, [
+              el('span', { style: 'font-weight:650', text: offer.retailer }),
+              offer === bestOffer ? chip('Best deal', 'good', 'check') : null,
+            ]),
+            el('p', { class: 'xs ink-2', style: 'margin-top:2px', text: (offer.shippingCents === 0 ? 'Free shipping' : '+' + money(offer.shippingCents) + ' shipping') + ' · ' + offer.delivery }),
+            conditionNote(offer),
+          ]),
+          el('div', { style: 'text-align:right' }, [
+            el('p', { class: 'tabular', style: 'font-size:18px;font-weight:700', text: money(offer.totalCents) }),
+            el('p', { class: 'xs muted tabular', text: money(offer.priceCents) + ' + ship' }),
+          ]),
+        ]),
+        buyLink(offer, true),
+      ]));
+    }
+    section.appendChild(mobile);
+
+    const rows = offers.map((offer) => el('tr', { style: offer.inStock ? '' : 'opacity:0.6' }, [
+      el('th', { scope: 'row' }, [
+        el('div', { class: 'row wrap', style: 'gap:8px' }, [
+          el('span', { text: offer.retailer }),
+          offer === bestOffer ? chip('Best deal', 'good', 'check') : null,
+        ]),
+        conditionNote(offer),
+      ]),
+      el('td', { class: 'num ink-2', text: money(offer.priceCents) }),
+      el('td', { class: 'num ink-2', text: offer.shippingCents === 0 ? 'Free' : money(offer.shippingCents) }),
+      el('td', { class: 'xs ink-2', text: offer.delivery }),
+      el('td', { class: 'num', style: 'font-weight:700', text: money(offer.totalCents) }),
+      el('td', { style: 'text-align:right' }, [buyLink(offer)]),
+    ]));
+
+    section.appendChild(el('div', { class: 'offers-desktop table-scroll' }, [
+      el('table', {}, [
+        el('thead', {}, [el('tr', {}, [
+          el('th', { scope: 'col', text: 'Retailer' }),
+          el('th', { scope: 'col', class: 'num', text: 'Item' }),
+          el('th', { scope: 'col', class: 'num', text: 'Shipping' }),
+          el('th', { scope: 'col', text: 'Delivery' }),
+          el('th', { scope: 'col', class: 'num', text: 'Total' }),
+          el('th', { scope: 'col' }),
+        ])]),
+        el('tbody', {}, rows),
+      ]),
+    ]));
+
+    section.appendChild(el('p', { class: 'xs muted', style: 'padding:12px 16px', text: "Buy links open the retailer's own site — PriceScout never handles checkout." }));
+    return section;
+  }
+
+  function chartSection(entry, stats, watch) {
+    const section = el('section', { class: 'card pad stack-sm', 'aria-labelledby': 'history-heading' });
+    const day = today();
+    const series = historyFor(entry, chartDays, day);
+    const colors = retailerColors(entry);
+
+    section.appendChild(el('div', { class: 'row-between wrap', style: 'align-items:flex-start' }, [
+      el('div', {}, [
+        el('h2', { id: 'history-heading', text: chartMode === 'retailer' ? 'Price by retailer' : 'Best price over time' }),
+        el('p', { class: 'xs muted', text: 'Total including shipping' }),
+      ]),
+      el('div', { class: 'segmented', role: 'group', 'aria-label': 'Date range' },
+        [[30, '30d'], [90, '90d'], [365, '1y']].map(([days, label]) => el('button', {
+          type: 'button', text: label, 'aria-pressed': chartDays === days ? 'true' : 'false',
+          onclick: () => { chartDays = days; render(); },
+        }))),
+    ]));
+
+    const host = el('div', { class: 'chart-wrap' });
+    section.appendChild(host);
+
+    requestAnimationFrame(() => drawChart(host, {
+      series,
+      mode: chartMode,
+      colors,
+      avg: stats.avg,
+      target: watch ? watch.targetCents : null,
+    }));
+
+    if (chartMode === 'retailer') {
+      section.appendChild(el('div', { class: 'legend' },
+        Object.keys(colors).map((retailer) => el('span', {}, [
+          el('span', { class: 'swatch', style: 'background:' + colors[retailer] }),
+          retailer,
+        ]))));
+    }
+
+    const keys = [];
+    if (chartMode === 'best' && stats.avg != null) {
+      keys.push(el('span', { class: 'row', style: 'gap:6px' }, [dashSwatch('var(--muted)'), chartDays + '-day average ' + money(stats.avg)]));
+    }
+    if (watch && watch.targetCents != null) {
+      keys.push(el('span', { class: 'row', style: 'gap:6px;color:var(--good-text)' }, [dashSwatch('var(--good)'), 'Your target ' + money(watch.targetCents)]));
+    }
+    if (keys.length) section.appendChild(el('div', { class: 'legend' }, keys));
+
+    section.appendChild(el('div', { class: 'row wrap', style: 'gap:8px' }, [
+      el('button', {
+        class: 'btn btn-secondary btn-sm', type: 'button',
+        text: chartMode === 'retailer' ? 'Show blended best price' : 'Break down by retailer',
+        onclick: () => { chartMode = chartMode === 'retailer' ? 'best' : 'retailer'; render(); },
+      }),
+      el('button', {
+        class: 'btn btn-ghost btn-sm', type: 'button',
+        text: chartTable ? 'Hide data table' : 'View as table',
+        onclick: () => { chartTable = !chartTable; render(); },
+      }),
+    ]));
+
+    if (chartTable) {
+      const columns = chartMode === 'retailer' ? Object.keys(colors) : ['Best price'];
+      section.appendChild(el('div', { class: 'history-table' }, [
+        el('table', {}, [
+          el('thead', {}, [el('tr', {}, [el('th', { scope: 'col', text: 'Date' })].concat(
+            columns.map((column) => el('th', { scope: 'col', class: 'num', text: column }))))]),
+          el('tbody', {}, series.slice().reverse().map((point) => el('tr', {},
+            [el('th', { scope: 'row', class: 'xs ink-2', style: 'font-weight:400;white-space:nowrap', text: longDate(point.date) })].concat(
+              columns.map((column) => el('td', {
+                class: 'num xs',
+                text: column === 'Best price' ? money(point.best) : (point.byRetailer[column] != null ? money(point.byRetailer[column]) : '—'),
+              })))))),
+        ]),
+      ]));
+    }
+
+    return section;
+  }
+
+  function dashSwatch(color) {
+    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    svg.setAttribute('width', 16);
+    svg.setAttribute('height', 4);
+    svg.setAttribute('aria-hidden', 'true');
+    svg.innerHTML = '<line x1="0" y1="2" x2="16" y2="2" stroke="' + color + '" stroke-width="2" stroke-dasharray="4 3"/>';
+    return svg;
+  }
+
+  function trackSection(entry, stats, watch) {
+    const section = el('section', { class: 'card pad stack-sm', 'aria-labelledby': 'track-heading' });
+    const feedback = el('p', { class: 'sm', style: 'color:var(--good-text)' });
+    feedback.hidden = true;
+
+    const input = el('input', {
+      class: 'input tabular', type: 'text', inputmode: 'decimal',
+      'aria-label': 'Target price in dollars',
+      value: watch && watch.targetCents != null ? (watch.targetCents / 100).toFixed(2) : '',
+      placeholder: stats.min != null ? (stats.min / 100).toFixed(2) : '0.00',
+    });
+
+    function saveWatch(event) {
+      event.preventDefault();
+      const targetCents = input.value.trim() === '' ? null : parseMoney(input.value);
+      if (input.value.trim() !== '' && (!targetCents || targetCents <= 0)) {
+        feedback.textContent = 'Enter a target price like 249.99, or leave it blank.';
+        feedback.style.color = 'var(--critical)';
+        feedback.hidden = false;
+        return;
+      }
+      const existing = state.watches[entry.slug];
+      state.watches[entry.slug] = {
+        targetCents,
+        createdAt: existing ? existing.createdAt : Date.now(),
+        lastAlertCents: null,
+        lastAlertDay: null,
+      };
+      rememberEntry(entry);
+      save();
+      const fired = evaluateWatches();
+      render();
+      window.setTimeout(() => {
+        const toast = document.getElementById('track-feedback');
+        if (toast) {
+          toast.textContent = fired ? 'Tracking. That already qualifies — check Alerts.' : "Tracking. We'll flag it when it drops.";
+          toast.hidden = false;
+        }
+      }, 0);
+    }
+
+    section.appendChild(el('div', { class: 'row-between' }, [
+      el('h2', { id: 'track-heading', text: watch ? 'Tracking this product' : 'Track this price' }),
+      watch ? el('button', {
+        class: 'btn btn-ghost btn-sm', type: 'button',
+        onclick: () => { delete state.watches[entry.slug]; save(); render(); },
+      }, [icon(ICONS.trash, 15), 'Stop tracking']) : null,
+    ]));
+
+    section.appendChild(el('form', { class: 'stack-sm', onsubmit: saveWatch }, [
+      el('label', { class: 'sm ink-2', style: 'font-weight:500', text: 'Alert me under' }),
+      el('div', { class: 'row' }, [
+        el('div', { class: 'grow' }, [input]),
+        el('button', { class: 'btn btn-primary', type: 'submit', text: watch ? 'Update' : 'Track' }),
+      ]),
+      el('p', { class: 'xs muted', text: stats.min != null ? 'Lowest seen in this window: ' + money(stats.min) : '' }),
+      el('p', { id: 'track-feedback', class: 'sm', style: 'color:var(--good-text)', hidden: true }),
+      feedback,
+    ]));
+
+    section.appendChild(el('p', { class: 'xs muted', text: 'In the full app this saves to your account and a scheduled job re-checks prices; here it is saved in this browser and re-checked when you open the app.' }));
+
+    return section;
+  }
+
+  // --- watchlist view ------------------------------------------------
+
+  function watchlistView() {
+    const wrap = el('div', { class: 'stack' });
+    wrap.appendChild(el('h1', { text: 'Watchlist' }));
+
+    const slugs = Object.keys(state.watches);
+    if (!slugs.length) {
+      wrap.appendChild(el('div', { class: 'card pad stack-sm', style: 'text-align:center' }, [
+        el('p', { class: 'sm ink-2', text: 'Nothing tracked yet. Open a product and set a target price to watch it.' }),
+        el('button', { class: 'btn btn-primary', type: 'button', text: 'Find a product', style: 'align-self:center', onclick: () => go({ name: 'search' }) }),
+      ]));
+      return wrap;
+    }
+
+    const day = today();
+    const list = el('div', { class: 'stack-sm' });
+
+    for (const slug of slugs) {
+      const entry = entryFor(slug);
+      if (!entry) continue;
+      const watch = state.watches[slug];
+      const offers = offersFor(entry, day).filter((offer) => offer.inStock).sort((a, b) => a.totalCents - b.totalCents);
+      const best = offers[0];
+      const stats = statsFor(entry, 90, day);
+      const targetMet = watch.targetCents != null && best && best.totalCents <= watch.targetCents;
+
+      list.appendChild(el('div', { class: 'card pad' }, [
+        el('div', { class: 'row', style: 'align-items:flex-start;gap:12px' }, [
+          el('button', { class: 'thumb', type: 'button', style: 'width:56px;height:56px;font-size:14px;cursor:pointer', text: initials(entry), 'aria-label': 'Open ' + entry.title, onclick: () => openProduct(slug) }),
+          el('div', { class: 'grow' }, [
+            el('button', {
+              class: 'result-title', type: 'button',
+              style: 'background:none;border:0;padding:0;text-align:left;cursor:pointer;font-family:inherit',
+              text: entry.title, onclick: () => openProduct(slug),
+            }),
+            el('p', { class: 'xs muted', style: 'margin-top:2px', text: best ? 'Cheapest at ' + best.retailer : 'No offers in stock' }),
+            el('div', { class: 'row wrap', style: 'gap:6px;margin-top:6px' }, [
+              targetMet ? chip('Target met', 'good', 'check') : null,
+              stats.hasRecentDrop ? chip(stats.recentDropPercent + '% this week', 'good', 'down') : null,
+              watch.targetCents != null && !targetMet ? chip('Target ' + money(watch.targetCents)) : null,
+            ]),
+          ]),
+          el('div', { style: 'text-align:right;flex-shrink:0' }, [
+            el('p', { class: 'price-lg tabular', text: money(best ? best.totalCents : null) }),
+            stats.avg != null ? el('p', { class: 'xs muted tabular', text: 'avg ' + money(stats.avg) }) : null,
+          ]),
+        ]),
+        el('div', { class: 'row', style: 'justify-content:flex-end;margin-top:8px' }, [
+          el('button', {
+            class: 'btn btn-ghost btn-sm',
+            type: 'button',
+            'aria-label': 'Stop tracking ' + entry.title,
+            onclick: () => { delete state.watches[slug]; save(); render(); },
+          }, [icon(ICONS.trash, 14), 'Remove']),
+        ]),
+      ]));
+    }
+
+    wrap.appendChild(list);
+
+    // Demo-only control: the real app runs a cron job instead.
+    wrap.appendChild(el('div', { class: 'banner-demo' }, [
+      el('span', { class: 'grow' }, [
+        el('strong', { text: 'Demo control · ' }),
+        'Prices here follow the real calendar. Jump the clock forward to watch history extend and alerts fire — the full app does this from a scheduled job.',
+      ]),
+      el('div', { class: 'row', style: 'gap:6px' }, [
+        el('button', {
+          class: 'btn btn-secondary btn-sm', type: 'button', text: '+1 day',
+          onclick: () => { state.dayOffset += 1; save(); evaluateWatches(); render(); },
+        }),
+        el('button', {
+          class: 'btn btn-secondary btn-sm', type: 'button', text: '+1 week',
+          onclick: () => { state.dayOffset += 7; save(); evaluateWatches(); render(); },
+        }),
+        state.dayOffset ? el('button', {
+          class: 'btn btn-ghost btn-sm', type: 'button', text: 'Reset (+' + state.dayOffset + 'd)',
+          onclick: () => { state.dayOffset = 0; save(); render(); },
+        }) : null,
+      ]),
+    ]));
+
+    return wrap;
+  }
+
+  // --- alerts view ---------------------------------------------------
+
+  const TYPE_LABELS = {
+    target_hit: 'Target reached',
+    all_time_low: 'All-time low',
+    below_average: 'Below average',
+  };
+
+  function alertsView() {
+    const wrap = el('div', { class: 'stack' });
+    const unread = unreadCount();
+
+    wrap.appendChild(el('div', { class: 'row-between' }, [
+      el('h1', {}, ['Alerts', unread ? el('span', { style: 'color:var(--brand);font-size:14px;font-weight:600;margin-left:8px', text: unread + ' new' }) : null]),
+      unread ? el('button', {
+        class: 'btn btn-ghost btn-sm', type: 'button', text: 'Mark all read',
+        onclick: () => { state.notifications.forEach((n) => { n.read = true; }); save(); render(); },
+      }) : null,
+    ]));
+
+    if (!state.notifications.length) {
+      wrap.appendChild(el('div', { class: 'card pad stack-sm', style: 'text-align:center' }, [
+        el('span', { style: 'color:var(--muted)' }, [icon(ICONS.bell, 30)]),
+        el('p', { class: 'sm ink-2', text: "No alerts yet. Track a product with a target price, then jump the demo clock forward on the watchlist to see one fire." }),
+        el('button', { class: 'btn btn-secondary', type: 'button', text: 'Go to watchlist', style: 'align-self:center', onclick: () => go({ name: 'watchlist' }) }),
+      ]));
+      return wrap;
+    }
+
+    const list = el('div', { class: 'stack-sm' });
+    for (const notification of state.notifications) {
+      const entry = entryFor(notification.slug);
+      list.appendChild(el('div', {
+        class: 'card pad stack-sm',
+        style: notification.read ? '' : 'border-color:color-mix(in srgb, var(--brand) 45%, var(--line))',
+      }, [
+        el('div', { class: 'row-between', style: 'align-items:flex-start' }, [
+          el('div', { class: 'grow' }, [
+            el('div', { class: 'row wrap', style: 'gap:8px' }, [
+              el('h3', { text: notification.title }),
+              chip(TYPE_LABELS[notification.type] || notification.type),
+            ]),
+            el('p', { class: 'sm ink-2', style: 'margin-top:4px', text: notification.body }),
+            el('p', { class: 'xs muted', style: 'margin-top:4px', text: relativeTime(notification.at) }),
+          ]),
+          el('p', { class: 'tabular', style: 'font-weight:700;font-size:16px', text: money(notification.priceCents) }),
+        ]),
+        el('div', { class: 'row wrap', style: 'gap:8px' }, [
+          entry ? el('button', { class: 'btn btn-secondary btn-sm', type: 'button', text: 'View product', onclick: () => openProduct(notification.slug) }) : null,
+          el('a', { class: 'btn btn-secondary btn-sm', href: notification.url, target: '_blank', rel: 'noopener noreferrer nofollow' }, ['Buy at ' + notification.retailer, icon(ICONS.external, 13)]),
+          !notification.read ? el('button', {
+            class: 'btn btn-ghost btn-sm', type: 'button', text: 'Mark read',
+            onclick: () => { notification.read = true; save(); render(); },
+          }) : null,
+        ]),
+      ]));
+    }
+    wrap.appendChild(list);
+    return wrap;
+  }
+
+  // --- about view ----------------------------------------------------
+
+  function aboutView() {
+    const wrap = el('div', { class: 'stack' });
+    wrap.appendChild(el('h1', { text: 'About this demo' }));
+
+    wrap.appendChild(el('div', { class: 'card pad stack-sm' }, [
+      el('h2', { text: 'What you are looking at' }),
+      el('p', { class: 'sm ink-2', text: 'PriceScout finds the cheapest place to buy a product, charts what it has cost over time, and tells you when it drops to your price. This page is a self-contained demo of that interface: the pricing engine that the full app runs on the server is running here in your browser instead.' }),
+      el('p', { class: 'sm ink-2', text: 'Every price is generated from a deterministic model — the same product always produces the same history — so the charts, comparisons and alerts all behave like the real thing without touching a retailer.' }),
+    ]));
+
+    wrap.appendChild(el('div', { class: 'card pad stack-sm' }, [
+      el('h2', { text: 'What the full app adds' }),
+      el('ul', { class: 'sm ink-2', style: 'margin:0;padding-left:20px;display:flex;flex-direction:column;gap:6px' }, [
+        el('li', { html: '<strong>Live prices.</strong> A <code>PriceProvider</code> interface with implementations for Google Shopping (SerpApi) and Amazon (Rainforest). Swapping sources is one environment variable; no scraping is used anywhere.' }),
+        el('li', { html: '<strong>Real price history.</strong> Every observation is appended to a database, so history accrues from the first time anyone searches a product.' }),
+        el('li', { html: '<strong>A scheduled job.</strong> Cron re-quotes tracked products in bounded batches and evaluates alerts — no need to open the app.' }),
+        el('li', { html: '<strong>An account.</strong> Your watchlist follows you across devices, with optional email alerts.' }),
+        el('li', { html: '<strong>An installable PWA</strong> with an offline shell.' }),
+      ]),
+      el('p', { class: 'sm ink-2', text: 'Here, the watchlist and alerts live in this browser only, and the clock control on the watchlist stands in for the scheduled job.' }),
+    ]));
+
+    wrap.appendChild(el('div', { class: 'card pad stack-sm' }, [
+      el('h2', { text: 'Reset' }),
+      el('p', { class: 'sm ink-2', text: 'Clears the watchlist, alerts, recents and the demo clock from this browser.' }),
+      el('button', {
+        class: 'btn btn-secondary', type: 'button', text: 'Clear demo data', style: 'align-self:flex-start',
+        onclick: () => {
+          state = Object.assign({}, defaults, { watches: {}, notifications: [], recentSearches: [], recentlyViewed: [], customEntries: {}, dayOffset: 0 });
+          save();
+          go({ name: 'search' });
+        },
+      }),
+    ]));
+
+    wrap.appendChild(demoBanner());
+    return wrap;
+  }
+
+  // =====================================================================
+  // Render
+  // =====================================================================
+
+  function render() {
+    renderNav();
+    view.textContent = '';
+    let content;
+    if (route.name === 'product') content = productView();
+    else if (route.name === 'watchlist') content = watchlistView();
+    else if (route.name === 'alerts') content = alertsView();
+    else if (route.name === 'about') content = aboutView();
+    else content = searchView();
+    view.appendChild(content);
+  }
+
+  let resizeTimer = null;
+  window.addEventListener('resize', () => {
+    if (route.name !== 'product') return;
+    window.clearTimeout(resizeTimer);
+    resizeTimer = window.setTimeout(render, 150);
+  });
+
+  evaluateWatches();
+  render();
+})();
+</script>
