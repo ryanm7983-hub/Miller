@@ -34,7 +34,7 @@ Open http://localhost:5173 and sign in as `demo@pricescout.app` / `demo1234`.
 | `npm run dev` | API + web dev server together |
 | `npm run seed` | Reset-safe sample catalog, history and demo user |
 | `npm run images` | Download real product photos for the sample catalog (see below) |
-| `npm test` | 50 server tests (providers incl. the live API parsers, pricing math, alert rules, HTTP flow) |
+| `npm test` | 55 server tests (providers incl. the live API parsers, pricing math, alert rules, HTTP flow) |
 | `npm run build` | Production build of the PWA into `web/dist` |
 | `npm run serve` | Build, then run the single-service production setup on :4000 |
 | `npm run refresh` | Run the scheduled price check once, now |
@@ -222,8 +222,13 @@ docker build -t pricescout . && docker run -p 4000:4000 -v pricescout-data:/data
 ```
 
 [`render.yaml`](render.yaml) (Render blueprint, disk included) and [`fly.toml`](fly.toml) are
-committed and ready. **[DEPLOY.md](DEPLOY.md)** walks through getting a provider key, budgeting its
-quota, all four hosting options and how to confirm you're on live data.
+committed and ready.
+
+- **[GETTING-ONLINE.md](GETTING-ONLINE.md)** — a step-by-step tutorial for putting this on the
+  internet as cheaply as possible, from $0 (Oracle's always-free VM, or your own machine behind a
+  Cloudflare tunnel) to about $7/month on Render. Start here if you just want it live.
+- **[DEPLOY.md](DEPLOY.md)** — the reference: every hosting option, provider keys, API-quota
+  budgeting and how to confirm you're on live data.
 
 Two constraints worth knowing up front: SQLite needs a persistent disk, and the price-refresh cron
 runs in-process, so the instance has to stay awake — that rules out serverless and most free tiers.
