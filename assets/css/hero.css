@@ -88,7 +88,9 @@
 .s-slime  { left: 19%; height: clamp(34px, 4.6vw, 58px); animation-delay: .5s; }
 .s-mush   { right: 24%; height: clamp(26px, 3.4vw, 44px); animation: none; }
 .s-tree   { right: 7%;  height: clamp(54px, 7.2vw, 96px); animation: none; }
-.s-bat    { right: 34%; bottom: auto; top: 22%; height: clamp(26px, 3.2vw, 42px); animation: flit 6s ease-in-out infinite; }
+/* Sits in the scenery band above the treeline — keeps it clear of the copy
+   column at every width. */
+.s-bat    { right: 13%; bottom: 190px; height: clamp(24px, 3vw, 38px); animation: flit 6s ease-in-out infinite; }
 .s-chest  { left: 31%;  height: clamp(30px, 3.8vw, 48px); animation: none; }
 @media (max-width: 780px) { .s-slime, .s-chest, .s-mush, .s-bat { display: none; } }
 

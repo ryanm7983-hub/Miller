@@ -13,7 +13,7 @@
 
   const DEFAULTS = {
     version: 4,
-    theme: 'dark',
+    theme: null,               // null = follow the viewer's system preference
     seenLanding: false,
     plan: 'free',              // 'free' | 'pro'
     trialStartedAt: null,

@@ -4,7 +4,9 @@
   "private": true,
   "description": "A local-first prompt studio for game developers — art, music and code prompts that share one art direction. Runs entirely offline from index.html.",
   "scripts": {
+    "bundle": "node scripts/bundle.js",
     "verify": "node scripts/verify.js",
+    "verify:bundle": "node scripts/bundle.js && node scripts/verify.js dist/pixelforge.html",
     "art:sprites": "node scripts/gen-sprites.js",
     "art:scenery": "node scripts/gen-scenery.js",
     "art": "npm run art:sprites && npm run art:scenery"

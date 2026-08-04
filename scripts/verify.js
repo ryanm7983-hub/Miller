@@ -3,7 +3,10 @@
    attempt to reach the network. */
 const path = require('path');
 const { chromium } = require('playwright');
-const PAGE = 'file://' + path.resolve(__dirname, '..', 'index.html');
+/* Defaults to the multi-file app; pass a path to check a build instead:
+     node scripts/verify.js dist/pixelforge.html                              */
+const TARGET = process.argv[2] || 'index.html';
+const PAGE = 'file://' + path.resolve(__dirname, '..', TARGET);
 
 const errors = [];
 const external = [];
@@ -52,11 +55,18 @@ const failed = [];
   });
 
 
-  await step('theme toggle switches to light and back', async () => {
+  await step('theme resolves from system preference and toggles both ways', async () => {
+    // The starting theme follows the OS preference, so assert the flip, not a
+    // fixed starting value.
+    const start = await page.getAttribute('html', 'data-theme');
+    if (start !== 'light' && start !== 'dark') throw new Error('no theme resolved, got ' + start);
+    const other = start === 'dark' ? 'light' : 'dark';
+
     await page.click('#theme-toggle');
-    if (await page.getAttribute('html', 'data-theme') !== 'light') throw new Error('did not go light');
+    if (await page.getAttribute('html', 'data-theme') !== other) throw new Error('did not switch to ' + other);
+
     await page.click('#theme-toggle');
-    if (await page.getAttribute('html', 'data-theme') !== 'dark') throw new Error('did not go dark');
+    if (await page.getAttribute('html', 'data-theme') !== start) throw new Error('did not switch back to ' + start);
   });
 
   // ── studio: art ──────────────────────────────────────────────────────

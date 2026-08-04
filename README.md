@@ -8,6 +8,10 @@ of them.
 **Open `index.html` in a browser. That's it.** No build step, no install, no
 server, no account.
 
+Need a single portable file — to host it, email it, or drop it on a USB stick?
+`npm run bundle` writes `dist/pixelforge.html`: the whole app in one file with
+every stylesheet, script and sprite inlined.
+
 ---
 
 ## Works completely offline
@@ -125,6 +129,11 @@ assets/
   img/
     sprite-*.svg              original pixel-art sprites
     scene-*.svg               parallax hero layers
+scripts/
+  bundle.js                   inlines everything into dist/ as one file
+  gen-sprites.js              compiles ASCII grids to sprite SVGs
+  gen-scenery.js              generates the parallax silhouettes
+  verify.js                   headless end-to-end check
 ```
 
 The hand-drawn ink accents are inlined from `util.js` rather than loaded as
@@ -147,7 +156,13 @@ npm run verify
 The app itself has zero dependencies — `npm install` is needed for the test
 harness only, never to run PixelForge.
 
-The 21 checks cover: landing render, theme toggle, art prompt generation and
+Pass a path to check a build instead of the source tree:
+
+```
+npm run bundle && node scripts/verify.js dist/pixelforge.html
+```
+
+The 21 checks cover: landing render, theme resolution and toggle, art prompt generation and
 content, quota enforcement, Pro gating and the paywall, the full upgrade
 walkthrough, biome batches, Theme Lock injection, animation frames, all three
 music output formats, code prompts across engines, library save/search, the

@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="dark">
+<html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -12,6 +12,19 @@
 <link rel="stylesheet" href="assets/css/studio.css">
 </head>
 <body>
+
+<script>
+/* Resolve the theme before anything paints, so a light-preference viewer never
+   sees a flash of dark. app.js owns the theme from here on; this only has to
+   agree with it on the first frame. Storage key matches core/store.js. */
+(function () {
+  var saved = null;
+  try { saved = (JSON.parse(localStorage.getItem('pixelforge.v4') || '{}') || {}).theme; } catch (e) {}
+  var theme = (saved === 'light' || saved === 'dark') ? saved
+    : (window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark');
+  document.documentElement.setAttribute('data-theme', theme);
+})();
+</script>
 
 <!-- ══════════════════════════════════════════════════════════ HEADER ══ -->
 <header class="site-head">

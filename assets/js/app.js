@@ -21,6 +21,15 @@
   const mounted = {};
 
   /* ── theme ─────────────────────────────────────────────────────────────── */
+
+  /* Until the viewer picks a theme explicitly we follow the system preference,
+     so the page arrives looking right rather than forcing dark on everyone. */
+  function resolveTheme() {
+    const saved = store.get('theme');
+    if (saved === 'light' || saved === 'dark') return saved;
+    return (global.matchMedia && global.matchMedia('(prefers-color-scheme: light)').matches) ? 'light' : 'dark';
+  }
+
   function applyTheme(theme) {
     document.documentElement.setAttribute('data-theme', theme);
     const btn = $('#theme-toggle');
@@ -31,7 +40,7 @@
   }
 
   function toggleTheme() {
-    const next = store.get('theme') === 'light' ? 'dark' : 'light';
+    const next = resolveTheme() === 'light' ? 'dark' : 'light';
     store.set('theme', next);
     applyTheme(next);
   }
@@ -148,7 +157,7 @@
               if (!ok) return;
               store.resetAll();
               close();
-              applyTheme(store.get('theme'));
+              applyTheme(resolveTheme());
               Object.keys(mounted).forEach(k => delete mounted[k]);
               setMode('art');
               updateHeaderCta();
@@ -205,8 +214,16 @@
 
   /* ── boot ──────────────────────────────────────────────────────────────── */
   function init() {
-    applyTheme(store.get('theme') || 'dark');
+    applyTheme(resolveTheme());
     U.paintInk(document);
+
+    /* Track the system preference while the viewer has no explicit choice. */
+    if (global.matchMedia) {
+      const mq = global.matchMedia('(prefers-color-scheme: light)');
+      const onScheme = () => { if (!store.get('theme')) applyTheme(resolveTheme()); };
+      if (mq.addEventListener) mq.addEventListener('change', onScheme);
+      else if (mq.addListener) mq.addListener(onScheme);
+    }
 
     /* header + landing wiring */
     $$('[data-action]').forEach(node => {

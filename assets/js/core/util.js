@@ -9,6 +9,18 @@
   const $  = (sel, root) => (root || document).querySelector(sel);
   const $$ = (sel, root) => Array.prototype.slice.call((root || document).querySelectorAll(sel));
 
+  /**
+   * Resolve an asset path. Normally a passthrough; when the app has been built
+   * into a single self-contained file, `PF_IMG` maps sprite names to inline
+   * data URIs and this swaps them in. Keeps call sites free of build concerns.
+   */
+  function assetUrl(p) {
+    const map = global.PF_IMG;
+    if (!map || typeof p !== 'string' || p.indexOf('assets/img/') !== 0) return p;
+    const key = p.slice('assets/img/'.length).replace(/\.svg$/, '');
+    return map[key] || p;
+  }
+
   /** Create an element from a tag, props and children. */
   function el(tag, props, children) {
     const node = document.createElement(tag);
@@ -21,6 +33,7 @@
         else if (k === 'text') node.textContent = v;
         else if (k.slice(0, 2) === 'on' && typeof v === 'function') node.addEventListener(k.slice(2), v);
         else if (k === 'dataset') Object.keys(v).forEach(d => { node.dataset[d] = v[d]; });
+        else if (k === 'src') node.setAttribute('src', assetUrl(v));
         else node.setAttribute(k, v === true ? '' : v);
       });
     }
@@ -219,7 +232,7 @@
 
   global.PF = global.PF || {};
   global.PF.util = {
-    $, $$, el, esc, val, setVal,
+    $, $$, el, esc, val, setVal, assetUrl,
     copy, copyToast, toast, modal, confirmDialog,
     paintInk, INK, fmtDate, debounce, download
   };
