@@ -13,10 +13,13 @@
   const store = global.PF.store;
   const premium = global.PF.premium;
   const D = global.PF_DATA;
+  const sfx = () => global.PF.sfx;
 
   let host = null;
   let platformId = 'suno';
   let last = { text: '', title: '', platform: '' };
+  /* Set when the preset card renders; lets the command palette load a preset. */
+  let applyPresetImpl = null;
 
   /* Platform list, plus a tool-agnostic option. */
   const PLATFORMS = D.MUSIC_PLATFORMS.concat([{
@@ -119,6 +122,7 @@
     const text = build();
     last = { text, title: val('mu_purpose'), platform: platform().name };
     renderOutput();
+    sfx().play('forge');
     toast('Music prompt ready for ' + platform().name, 'ok');
   }
 
@@ -186,7 +190,9 @@
       if (!shown) list.appendChild(el('div', { class: 'preset-empty', text: 'No presets match “' + search.value + '”' }));
     }
 
-    function apply(x) {
+    function apply(x) { applyPreset(x); }
+
+    function applyPresetInner(x) {
       setVal('mu_genre', x.genre);
       setVal('mu_mood', x.mood);
       setVal('mu_instr', x.instr);
@@ -197,6 +203,7 @@
       setVal('mu_ex', x.tags ? 'Reference feel: ' + x.tags : '');
       toast('Loaded “' + x.name + '”', 'ok');
     }
+    applyPresetImpl = applyPresetInner;
 
     /* Preset tempo/key strings are free-form; snap them onto our option list. */
     function nearest(options, value) {
@@ -350,5 +357,11 @@
   document.addEventListener('pf:plan-changed', () => { if (host && host.offsetParent !== null) render(); });
 
   global.PF = global.PF || {};
-  global.PF.music = { mount, render };
+  /** Load a music preset into the brief (used by the command palette). */
+  function applyPreset(preset) {
+    if (!applyPresetImpl) render();
+    if (applyPresetImpl) applyPresetImpl(preset);
+  }
+
+  global.PF.music = { mount, render, applyPreset };
 })(typeof window !== 'undefined' ? window : globalThis);

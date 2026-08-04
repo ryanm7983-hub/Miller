@@ -39,6 +39,21 @@
     }
   }
 
+  function applySoundIcon() {
+    const btn = $('#sound-toggle');
+    if (!btn) return;
+    const on = global.PF.sfx.enabled();
+    btn.textContent = on ? '🔊' : '🔇';
+    btn.setAttribute('aria-label', on ? 'Mute sound effects' : 'Unmute sound effects');
+    btn.setAttribute('title', on ? 'Sound on' : 'Sound off');
+    btn.classList.toggle('off', !on);
+  }
+
+  function toggleSound() {
+    global.PF.sfx.setEnabled(!global.PF.sfx.enabled());
+    applySoundIcon();
+  }
+
   function toggleTheme() {
     const next = resolveTheme() === 'light' ? 'dark' : 'light';
     store.set('theme', next);
@@ -233,14 +248,19 @@
         if (action === 'studio') showStudio(node.dataset.mode);
         else if (action === 'home') showLanding();
         else if (action === 'toggle-studio') document.body.classList.contains('in-studio') ? showLanding() : showStudio();
-        else if (action === 'theme') toggleTheme();
+        else if (action === 'theme') { toggleTheme(); global.PF.sfx.play('click'); }
+        else if (action === 'sound') toggleSound();
+        else if (action === 'palette') global.PF.palette.open();
         else if (action === 'account') openAccount();
         else if (action === 'upgrade') premium.openWalkthrough();
       });
     });
 
     /* mode rail */
-    $$('.mode-btn').forEach(btn => btn.addEventListener('click', () => setMode(btn.dataset.mode)));
+    $$('.mode-btn').forEach(btn => btn.addEventListener('click', () => {
+      global.PF.sfx.play('click');
+      setMode(btn.dataset.mode);
+    }));
 
     /* keep header + panels in sync when the plan changes */
     document.addEventListener('pf:plan-changed', () => {
@@ -248,6 +268,7 @@
       renderPlanCards();
     });
 
+    applySoundIcon();
     initStickyHeader();
     initParallax();
     renderPlanCards();
@@ -311,5 +332,5 @@
   else init();
 
   global.PF = global.PF || {};
-  global.PF.app = { showStudio, showLanding, setMode, openAccount, toggleTheme };
+  global.PF.app = { showStudio, showLanding, setMode, openAccount, toggleTheme, toggleSound };
 })(typeof window !== 'undefined' ? window : globalThis);

@@ -117,6 +117,7 @@
   function activatePro(source) {
     store.set('plan', 'pro');
     if (!store.get('trialStartedAt')) store.set('trialStartedAt', Date.now());
+    if (global.PF.sfx) global.PF.sfx.play('fanfare');
     toast('Forge Master unlocked — every builder is open', 'ok');
     document.dispatchEvent(new CustomEvent('pf:plan-changed', { detail: { plan: 'pro', source: source || 'walkthrough' } }));
   }

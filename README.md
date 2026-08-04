@@ -62,6 +62,18 @@ feature that makes a folder of assets look like one game.
 Save any prompt, search it, copy it back out, or export everything to a file.
 Stored in your browser.
 
+### Flair that earns its place
+- **Command palette** — `Ctrl`/`Cmd`+`K` searches every builder, action and
+  preset (~1,000 entries) with fuzzy matching. Enter jumps straight there.
+- **Roll** — randomises the entire builder from the preset library and forges
+  the result. Good for breaking a blank-page stall.
+- **Spec sheet** — exports the current prompt as a shareable SVG card with
+  colour-coded clauses and real palette swatches.
+- **Chiptune sound** — anvil strike on forge, coin on save, fanfare on unlock.
+  Synthesised from oscillators at call time, so it ships no audio files. Only
+  ever fires on a user action; mute from the header, and the first sound tells
+  you where the mute is.
+
 ---
 
 ## Membership
@@ -115,7 +127,10 @@ assets/
     core/
       util.js                 DOM helpers, clipboard, toast, modal, ink accents
       store.js                localStorage state (defensive; falls back to memory)
+      sfx.js                  chiptune SFX synthesised from oscillators
+      speccard.js             renders a prompt as a shareable SVG spec sheet
       premium.js              plans, entitlements, quota, upgrade walkthrough
+      palette.js              Ctrl+K command palette over everything
     data/
       presets.js              ~900 art presets, themes, biomes, weapons, music styles
       fields.js               form schemas for the art builders
@@ -162,11 +177,12 @@ Pass a path to check a build instead of the source tree:
 npm run bundle && node scripts/verify.js dist/pixelforge.html
 ```
 
-The 21 checks cover: landing render, theme resolution and toggle, art prompt generation and
-content, quota enforcement, Pro gating and the paywall, the full upgrade
-walkthrough, biome batches, Theme Lock injection, animation frames, all three
-music output formats, code prompts across engines, library save/search, the
-account panel, and state persistence across a reload.
+The 26 checks cover: landing render, theme resolution and toggle, art prompt
+generation and content, quota enforcement, Pro gating and the paywall, the full
+upgrade walkthrough, biome batches, Theme Lock injection, animation frames, all
+three music output formats, code prompts across engines, library save/search,
+the command palette, roll, spec-sheet export, the sound toggle, the account
+panel, and state persistence across a reload.
 
 ---
 

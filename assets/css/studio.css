@@ -281,3 +281,62 @@ body.in-studio .landing { display: none; }
 .acct-row .grow { flex: 1; min-width: 0; }
 .acct-row b { display: block; font-size: 14px; }
 .acct-row span { font-size: 12px; color: var(--tx-2); }
+
+/* ── forge bar: generate + roll ──────────────────────────────────────────── */
+.forge-bar { display: flex; gap: 10px; }
+.forge-bar .btn:first-child { flex: 1; }
+@media (max-width: 520px) { .forge-bar { flex-direction: column; } }
+
+.roll-btn { gap: 9px; }
+.roll-btn .die { font-size: 20px; line-height: 1; display: inline-block; }
+.roll-btn.rolling .die { animation: die-roll .34s cubic-bezier(.3,.7,.4,1.3); }
+@keyframes die-roll {
+  0%   { transform: rotate(0)      scale(1); }
+  45%  { transform: rotate(220deg) scale(1.35); }
+  100% { transform: rotate(360deg) scale(1); }
+}
+
+/* Anvil spark burst while a prompt forges. */
+.out-card { position: relative; }
+.out-card.forging::after {
+  content: ""; position: absolute; top: 0; left: 0; right: 0; height: 3px;
+  border-radius: 3px;
+  background: linear-gradient(90deg, transparent, var(--gold), var(--cyan), transparent);
+  animation: forge-sweep .55s ease-out;
+}
+@keyframes forge-sweep { from { opacity: 0; transform: scaleX(.2); } to { opacity: 0; transform: scaleX(1); } }
+
+/* ── command palette ─────────────────────────────────────────────────────── */
+.cp { display: flex; flex-direction: column; max-height: min(70vh, 620px); }
+.cp-head { display: flex; align-items: center; gap: 10px; padding: 16px 56px 16px 18px; border-bottom: 1px solid var(--bd); }
+.cp-input {
+  flex: 1; border: 0; background: transparent; color: var(--tx);
+  font-size: 16px; font-weight: 600; outline: none; min-width: 0;
+}
+.cp-input::placeholder { color: var(--tx-3); font-weight: 500; }
+.cp-foot kbd {
+  padding: 2px 7px; border-radius: 5px;
+  border: 1px solid var(--bd); background: var(--sunken);
+  font-family: var(--f-mono); font-size: 10.5px; color: var(--tx-3);
+}
+.cp-list { flex: 1; overflow-y: auto; padding: 6px; min-height: 120px; }
+.cp-item {
+  display: flex; align-items: baseline; gap: 10px;
+  padding: 9px 12px; border-radius: var(--r-sm);
+  cursor: pointer; font-size: 13.5px;
+}
+.cp-item.on { background: var(--violet-dim); }
+.cp-item:hover { background: var(--raised); }
+.cp-kind {
+  flex: 0 0 auto; min-width: 66px;
+  font-size: 9.5px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase;
+  color: var(--violet-2);
+}
+.cp-label { flex: 1; font-weight: 600; color: var(--tx); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cp-hint { flex: 0 0 auto; font-size: 11.5px; color: var(--tx-3); max-width: 34%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cp-foot {
+  display: flex; align-items: center; gap: 14px;
+  padding: 9px 16px; border-top: 1px solid var(--bd);
+  font-size: 11.5px; color: var(--tx-3);
+}
+.cp-foot kbd { margin-right: 3px; }

@@ -38,6 +38,8 @@
       <a class="navlink hide-sm" href="#how">How it works</a>
       <a class="navlink hide-sm" href="#pricing">Pricing</a>
       <span class="badge" id="head-plan" title="Your current plan">FREE</span>
+      <button class="icon-btn hide-xs" id="palette-btn" type="button" data-action="palette" aria-label="Open command palette" title="Search everything (Ctrl+K)">⌘</button>
+      <button class="icon-btn" id="sound-toggle" type="button" data-action="sound" aria-label="Toggle sound">🔊</button>
       <button class="icon-btn" id="theme-toggle" type="button" data-action="theme" aria-label="Switch theme">☀</button>
       <button class="icon-btn" type="button" data-action="account" aria-label="Your account" title="Your account">☰</button>
       <button class="btn btn-sm btn-primary" id="head-cta" type="button" data-action="toggle-studio">Open the studio</button>
@@ -271,6 +273,8 @@
 <!-- Classic scripts, loaded in dependency order, so the app runs from file:// -->
 <script src="assets/js/core/util.js"></script>
 <script src="assets/js/core/store.js"></script>
+<script src="assets/js/core/sfx.js"></script>
+<script src="assets/js/core/speccard.js"></script>
 <script src="assets/js/core/premium.js"></script>
 <script src="assets/js/data/presets.js"></script>
 <script src="assets/js/data/fields.js"></script>
@@ -279,6 +283,7 @@
 <script src="assets/js/panels/music.js"></script>
 <script src="assets/js/panels/code.js"></script>
 <script src="assets/js/panels/library.js"></script>
+<script src="assets/js/core/palette.js"></script>
 <script src="assets/js/app.js"></script>
 </body>
 </html>

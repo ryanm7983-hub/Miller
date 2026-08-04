@@ -284,3 +284,7 @@
 .site-foot p { font-size: 12.5px; color: var(--tx-3); }
 .site-foot nav { display: flex; gap: 16px; margin-left: auto; }
 .site-foot nav a { font-size: 12.5px; color: var(--tx-2); }
+
+/* Muted state for the sound toggle. */
+.icon-btn.off { opacity: .55; }
+@media (max-width: 700px) { .site-nav .hide-xs { display: none; } }

@@ -32,6 +32,8 @@ const CSS_FILES = ['assets/css/theme.css', 'assets/css/hero.css', 'assets/css/st
 const JS_FILES = [
   'assets/js/core/util.js',
   'assets/js/core/store.js',
+  'assets/js/core/sfx.js',
+  'assets/js/core/speccard.js',
   'assets/js/core/premium.js',
   'assets/js/data/presets.js',
   'assets/js/data/fields.js',
@@ -40,6 +42,7 @@ const JS_FILES = [
   'assets/js/panels/music.js',
   'assets/js/panels/code.js',
   'assets/js/panels/library.js',
+  'assets/js/core/palette.js',
   'assets/js/app.js'
 ];
 

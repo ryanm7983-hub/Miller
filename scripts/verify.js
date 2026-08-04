@@ -237,6 +237,67 @@ const failed = [];
   });
 
 
+  // ── flair: palette, roll, spec sheet, sound ──────────────────────────
+  await step('command palette opens with Ctrl+K and runs a command', async () => {
+    await page.keyboard.press('Control+k');
+    await page.waitForSelector('.cp-input');
+    await page.fill('.cp-input', 'weapon');
+    await page.waitForTimeout(220);
+    const hits = await page.$$('.cp-item');
+    if (!hits.length) throw new Error('palette found nothing for "weapon"');
+    await page.keyboard.press('Enter');
+    await page.waitForTimeout(350);
+    if (await page.$('.cp-input')) throw new Error('palette did not close on Enter');
+  });
+
+  await step('command palette finds presets by name', async () => {
+    await page.keyboard.press('Control+k');
+    await page.waitForSelector('.cp-input');
+    await page.fill('.cp-input', 'necromancer');
+    await page.waitForTimeout(220);
+    const text = await page.textContent('.cp-list');
+    if (!/necromancer/i.test(text)) throw new Error('preset not indexed: ' + text.slice(0, 90));
+    await page.keyboard.press('Escape');
+    await page.waitForTimeout(200);
+  });
+
+  await step('roll randomises the builder and forges a prompt', async () => {
+    await page.click('.mode-btn[data-mode="art"]');
+    await page.waitForTimeout(250);
+    await page.click('.tab:has-text("Character")');
+    await page.waitForTimeout(250);
+    const before = await page.textContent('#art-out-pos');
+    await page.click('.roll-btn');
+    await page.waitForTimeout(900);
+    const after = await page.textContent('#art-out-pos');
+    if (after === before) throw new Error('roll did not produce a new prompt');
+    if (after.length < 400) throw new Error('rolled prompt too short');
+  });
+
+  await step('spec sheet downloads valid SVG', async () => {
+    const dl = page.waitForEvent('download', { timeout: 8000 });
+    await page.click('#art-output button:has-text("Spec sheet")');
+    const download = await dl;
+    const name = download.suggestedFilename();
+    if (!name.endsWith('-spec.svg')) throw new Error('unexpected filename ' + name);
+    const stream = await download.createReadStream();
+    let body = '';
+    for await (const chunk of stream) body += chunk;
+    if (!body.startsWith('<svg')) throw new Error('not an SVG');
+    if (!body.includes('PIXELFORGE SPEC SHEET')) throw new Error('missing header');
+    if ((body.match(/<svg/g) || []).length !== (body.match(/<\/svg>/g) || []).length) throw new Error('unbalanced svg');
+  });
+
+  await step('sound toggle flips and persists', async () => {
+    const before = await page.textContent('#sound-toggle');
+    await page.click('#sound-toggle');
+    await page.waitForTimeout(150);
+    const after = await page.textContent('#sound-toggle');
+    if (before === after) throw new Error('sound icon did not change');
+    await page.click('#sound-toggle');
+    await page.waitForTimeout(150);
+  });
+
   // ── account + persistence ────────────────────────────────────────────
   await step('account panel opens and reports Pro', async () => {
     await page.click('[data-action="account"]');

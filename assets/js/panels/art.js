@@ -14,6 +14,7 @@
   const premium = global.PF.premium;
   const D = global.PF_DATA;
   const F = global.PF.fields;
+  const sfx = () => global.PF.sfx;
 
   /* ── panel state ───────────────────────────────────────────────────────── */
   let host = null;
@@ -223,6 +224,7 @@
 
     last = { pos, neg: fullNeg, title: tab.title, batch: anim ? anim.frames.map((f, i) => ({ name: 'Frame ' + (i + 1) + ' / ' + anim.count, text: f.prompt })) : null };
     renderOutput();
+    sfx().play('forge');
     toast(anim ? anim.count + ' frame prompts ready' : 'Prompt generated', 'ok');
   }
 
@@ -255,6 +257,7 @@
       neg, title: 'Biome: ' + name, batch
     };
     renderOutput();
+    sfx().play('forge');
     toast(batch.length + ' tile prompts ready', 'ok');
   }
 
@@ -479,7 +482,8 @@
       el('button', { class: 'btn btn-primary', type: 'button', text: 'Copy prompt', onclick: () => last.pos ? copyToast(last.pos, 'Prompt copied') : toast('Generate a prompt first', 'warn') }),
       el('button', { class: 'btn btn-sm', type: 'button', text: 'Copy negative', onclick: () => last.neg ? copyToast(last.neg, 'Negative copied') : toast('Nothing to copy', 'warn') }),
       el('button', { class: 'btn btn-sm', type: 'button', text: 'Save to library', onclick: saveCurrent }),
-      el('button', { class: 'btn btn-sm', type: 'button', text: 'Download .txt', onclick: downloadCurrent })
+      el('button', { class: 'btn btn-sm', type: 'button', text: 'Download .txt', onclick: downloadCurrent }),
+      el('button', { class: 'btn btn-sm btn-cyan', type: 'button', text: 'Spec sheet', onclick: downloadSpecSheet })
     ]);
 
     const kids = [
@@ -547,6 +551,56 @@
     toast('Downloaded', 'ok');
   }
 
+  /** Export the current prompt as a shareable SVG spec sheet. */
+  function downloadSpecSheet() {
+    if (!last.pos) { toast('Generate a prompt first', 'warn'); return; }
+    const lock = activeLock();
+    global.PF.specCard.download({
+      title: last.title || 'Art prompt',
+      prompt: last.pos,
+      negative: last.neg,
+      meta: [buildMode().split(',')[0], perspective().id === 'flat' ? 'flat 2D side-view' : perspective().id + ' view',
+        lock ? 'theme: ' + (lock.name || lock.world) : null].filter(Boolean).join('  ·  '),
+      palette: (lock && lock.hex) || val('g_hex')
+    });
+    sfx().play('coin');
+    toast('Spec sheet downloaded', 'ok');
+  }
+
+  const pick = arr => arr[Math.floor(Math.random() * arr.length)];
+
+  /**
+   * Randomise the whole builder from the preset library, then forge it.
+   * Turns the form into something you can play with when you are stuck.
+   */
+  function roll() {
+    const tab = tabById(tabId);
+    if (tab.gated && !premium.has(tab.gated)) { premium.showPaywall('feature', tab.gated); return; }
+
+    sfx().play('roll');
+
+    // every select on the tab gets a random option
+    tab.fields.forEach(f => {
+      const node = document.getElementById(f.id);
+      if (!node) return;
+      if (f.type === 'select' && node.options.length) {
+        node.selectedIndex = Math.floor(Math.random() * node.options.length);
+      }
+    });
+
+    // and the description comes from the tab's own preset list
+    if (tab.presetKey && tab.presetTarget) {
+      const raw = D[tab.presetKey];
+      const all = Array.isArray(raw) ? raw : Object.keys(raw).reduce((acc, g) => acc.concat(raw[g]), []);
+      if (all.length) setVal(tab.presetTarget, pick(all));
+    }
+
+    if (tab.pose) poseId = pick(F.POSES).id;
+
+    // let the roll animation land before the forge sound
+    setTimeout(generate, 320);
+  }
+
   function renderOutput() {
     const pane = document.getElementById('art-output');
     if (!pane) return;
@@ -603,11 +657,28 @@
     if (tab.imageRef) form.appendChild(imageRefCard());
     form.appendChild(negativeCard());
 
-    form.appendChild(el('button', {
-      class: 'btn btn-primary btn-lg btn-block', type: 'button',
-      text: tab.batch ? 'Generate tileset prompts' : 'Generate prompt',
-      onclick: generate
-    }));
+    /* Build the roll button first so its handler closes over the node — the
+       form is not in the document yet, so a querySelector here would miss. */
+    const rollBtn = el('button', {
+      class: 'btn btn-lg btn-cyan roll-btn', type: 'button',
+      title: 'Roll a random asset', 'aria-label': 'Roll a random asset',
+      html: '<span class="die">\u2680</span> Roll'
+    });
+    rollBtn.addEventListener('click', () => {
+      rollBtn.classList.remove('rolling');
+      void rollBtn.offsetWidth;      // reflow, so the animation restarts
+      rollBtn.classList.add('rolling');
+      roll();
+    });
+
+    form.appendChild(el('div', { class: 'forge-bar' }, [
+      el('button', {
+        class: 'btn btn-primary btn-lg', type: 'button', id: 'art-generate',
+        text: tab.batch ? 'Generate tileset prompts' : 'Generate prompt',
+        onclick: generate
+      }),
+      rollBtn
+    ]));
 
     /* right column */
     const outPane = el('div', { class: 'pane-out', id: 'art-output' }, outputCard());
@@ -637,5 +708,24 @@
   document.addEventListener('pf:plan-changed', () => { if (host && host.offsetParent !== null) render(); });
 
   global.PF = global.PF || {};
-  global.PF.art = { mount, render };
+  /** Switch builder tab from outside the panel (command palette). */
+  function setTab(id) {
+    if (!F.TABS.some(t => t.id === id)) return;
+    tabId = id;
+    animId = '';
+    store.pref('art', 'tab', id);
+    render();
+  }
+
+  /** Drop a preset string into the current tab's description field. */
+  function applyPreset(text) {
+    const tab = tabById(tabId);
+    if (!tab.presetTarget) return;
+    setVal(tab.presetTarget, text);
+    const node = document.getElementById(tab.presetTarget);
+    if (node) { node.focus(); node.scrollIntoView({ block: 'center', behavior: 'smooth' }); }
+    toast('Preset applied', 'ok');
+  }
+
+  global.PF.art = { mount, render, setTab, applyPreset, roll };
 })(typeof window !== 'undefined' ? window : globalThis);

@@ -8,6 +8,7 @@
   const { el, toast, copyToast, confirmDialog } = U;
   const store = global.PF.store;
   const premium = global.PF.premium;
+  const sfx = () => global.PF.sfx;
 
   let host = null;
   let filter = 'all';
@@ -116,7 +117,7 @@
           ]),
           el('div', { class: 'lib-body scroll-y', text: item.text }),
           el('div', { class: 'lib-foot' }, [
-            el('button', { class: 'btn btn-sm', type: 'button', text: 'Copy', onclick: () => copyToast(item.text, 'Copied') }),
+            el('button', { class: 'btn btn-sm', type: 'button', text: 'Copy', onclick: () => { sfx().play('click'); copyToast(item.text, 'Copied'); } }),
             item.negative ? el('button', { class: 'btn btn-sm btn-ghost', type: 'button', text: 'Copy negative', onclick: () => copyToast(item.negative, 'Negative copied') }) : null,
             el('span', { class: 'spacer' }),
             el('span', { class: 'lib-meta', text: U.fmtDate(item.createdAt) }),

@@ -14,6 +14,8 @@
   const DEFAULTS = {
     version: 4,
     theme: null,               // null = follow the viewer's system preference
+    sound: true,               // chiptune SFX on user actions
+    soundNudged: false,        // whether we've explained the mute control
     seenLanding: false,
     plan: 'free',              // 'free' | 'pro'
     trialStartedAt: null,
