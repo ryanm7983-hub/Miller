@@ -1,0 +1,18 @@
+{
+  "name": "pixelforge",
+  "version": "4.0.0",
+  "private": true,
+  "description": "A local-first prompt studio for game developers — art, music and code prompts that share one art direction. Runs entirely offline from index.html.",
+  "scripts": {
+    "verify": "node scripts/verify.js",
+    "art:sprites": "node scripts/gen-sprites.js",
+    "art:scenery": "node scripts/gen-scenery.js",
+    "art": "npm run art:sprites && npm run art:scenery"
+  },
+  "devDependencies": {
+    "playwright": "^1.56.1"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

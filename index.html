@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PixelForge — game asset, music &amp; code prompts</title>
+<meta name="description" content="A prompt studio for game developers. Build art, music and code prompts that stay consistent across your whole project. Works completely offline.">
+<meta name="color-scheme" content="dark light">
+<link rel="icon" href="assets/img/sprite-sword.svg">
+<link rel="stylesheet" href="assets/css/theme.css">
+<link rel="stylesheet" href="assets/css/hero.css">
+<link rel="stylesheet" href="assets/css/studio.css">
+</head>
+<body>
+
+<!-- ══════════════════════════════════════════════════════════ HEADER ══ -->
+<header class="site-head">
+  <div class="wrap">
+    <a class="brand" href="#" data-action="home">
+      <img src="assets/img/sprite-sword.svg" alt="" class="px">
+      <span>Pixel<i>Forge</i></span>
+    </a>
+    <nav class="site-nav">
+      <a class="navlink hide-sm" href="#features">Features</a>
+      <a class="navlink hide-sm" href="#how">How it works</a>
+      <a class="navlink hide-sm" href="#pricing">Pricing</a>
+      <span class="badge" id="head-plan" title="Your current plan">FREE</span>
+      <button class="icon-btn" id="theme-toggle" type="button" data-action="theme" aria-label="Switch theme">☀</button>
+      <button class="icon-btn" type="button" data-action="account" aria-label="Your account" title="Your account">☰</button>
+      <button class="btn btn-sm btn-primary" id="head-cta" type="button" data-action="toggle-studio">Open the studio</button>
+    </nav>
+  </div>
+</header>
+
+<!-- ═════════════════════════════════════════════════════════ LANDING ══ -->
+<main class="landing">
+
+  <!-- ── hero ─────────────────────────────────────────────────────────── -->
+  <section class="hero">
+    <div class="hero-sky" aria-hidden="true"></div>
+
+    <div class="layer l-stars"  aria-hidden="true"><img src="assets/img/scene-stars.svg"  alt=""></div>
+    <div class="layer l-moon"   aria-hidden="true"><img src="assets/img/scene-moon.svg"   alt=""></div>
+    <div class="layer l-far"    aria-hidden="true"><img src="assets/img/scene-far.svg"    alt=""></div>
+    <div class="layer l-mid"    aria-hidden="true"><img src="assets/img/scene-mid.svg"    alt=""></div>
+    <div class="layer l-castle" aria-hidden="true"><img src="assets/img/scene-castle.svg" alt=""></div>
+    <div class="layer l-trees"  aria-hidden="true"><img src="assets/img/scene-trees.svg"  alt=""></div>
+    <div class="layer l-ground" aria-hidden="true"><img src="assets/img/scene-ground.svg" alt=""></div>
+
+    <div class="stage-sprite s-knight" aria-hidden="true"><img src="assets/img/sprite-knight.svg" alt="" class="px"></div>
+    <div class="stage-sprite s-slime"  aria-hidden="true"><img src="assets/img/sprite-slime.svg"  alt="" class="px"></div>
+    <div class="stage-sprite s-chest"  aria-hidden="true"><img src="assets/img/sprite-chest.svg"  alt="" class="px"></div>
+    <div class="stage-sprite s-mush"   aria-hidden="true"><img src="assets/img/sprite-mushroom.svg" alt="" class="px"></div>
+    <div class="stage-sprite s-tree"   aria-hidden="true"><img src="assets/img/sprite-tree.svg"   alt="" class="px"></div>
+    <div class="stage-sprite s-bat"    aria-hidden="true"><img src="assets/img/sprite-bat.svg"    alt="" class="px"></div>
+
+    <div class="wrap hero-inner">
+      <span class="hero-eyebrow">
+        <img src="assets/img/sprite-crystal.svg" alt="" class="px">
+        Works completely offline — nothing ever leaves your machine
+      </span>
+
+      <h1>Stop fighting your prompts. <span class="hl">Forge them.<span class="ink" data-ink="underline"></span></span></h1>
+
+      <p class="hero-lede">
+        PixelForge turns a few clicks into the long, precise prompts that actually produce usable
+        game assets — sprites, tilesets, music briefs and engine code. Lock one art direction and
+        every prompt you write inherits it, so your game looks like <em>one</em> game.
+      </p>
+
+      <div class="hero-cta">
+        <button class="btn btn-primary btn-lg" type="button" data-action="studio" data-mode="art">Start forging — free</button>
+        <a class="btn btn-lg btn-ghost" href="#how">See how it works</a>
+      </div>
+
+      <div class="hero-trust">
+        <span><b>900+</b> curated presets</span>
+        <span><b>10</b> biome tilesets</span>
+        <span><b>40+</b> code systems</span>
+        <span><b>0</b> network requests</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── features ─────────────────────────────────────────────────────── -->
+  <section class="section" id="features">
+    <div class="wrap">
+      <div class="section-head">
+        <div class="section-kicker">Three forges, one art direction</div>
+        <h2>Everything a small team has to make, briefed properly</h2>
+        <p>Each builder asks the questions a good brief needs, then assembles a prompt far longer and more specific than anyone types by hand.</p>
+      </div>
+
+      <div class="feature-grid">
+        <article class="feature">
+          <div class="feature-ico"><img src="assets/img/sprite-knight.svg" alt="" class="px"></div>
+          <h3>Art assets</h3>
+          <p>Characters, enemies, platforms, props, backgrounds, foregrounds, UI, VFX, weapons and full biome tilesets. Six art styles from 8-bit pixel to scratchy ink horror, with perspective and negative prompts handled for you.</p>
+        </article>
+
+        <article class="feature">
+          <div class="feature-ico"><img src="assets/img/sprite-banner.svg" alt="" class="px"></div>
+          <h3>Music briefs</h3>
+          <p>Describe the track — purpose, mood, instrumentation, tempo, key — and get a prompt formatted for Suno, Udio, Stable Audio, MusicGen, or as a plain brief for a human composer. Prompts only; no audio is generated here.</p>
+        </article>
+
+        <article class="feature">
+          <div class="feature-ico"><img src="assets/img/sprite-crystal.svg" alt="" class="px"></div>
+          <h3>Code prompts</h3>
+          <p>Pick your engine, genre and the systems you need — from jump feel to save/load to behaviour trees — and get a structured brief with conventions, constraints and output format ready for any coding assistant.</p>
+        </article>
+
+        <article class="feature">
+          <div class="feature-ico"><img src="assets/img/sprite-chest.svg" alt="" class="px"></div>
+          <h3>Theme Lock</h3>
+          <p>Set your world, palette and reference once. Every prompt from every builder inherits it, along with an explicit consistency instruction. This is the difference between a folder of sprites and a game.</p>
+        </article>
+
+        <article class="feature">
+          <div class="feature-ico"><img src="assets/img/sprite-coin.svg" alt="" class="px"></div>
+          <h3>Your library</h3>
+          <p>Save any prompt, search it later, copy it back out or export the lot to a file. Stored in your browser — no account, no sync, no server.</p>
+        </article>
+
+        <article class="feature">
+          <div class="feature-ico"><img src="assets/img/sprite-potion.svg" alt="" class="px"></div>
+          <h3>Genuinely offline</h3>
+          <p>No CDN, no fonts, no analytics, no API keys, no telemetry. Open the file from a USB stick on a plane and every feature still works exactly the same.</p>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── stats ────────────────────────────────────────────────────────── -->
+  <section class="section" style="padding-top:0">
+    <div class="wrap">
+      <div class="stats">
+        <div class="stat"><b>10</b><span>asset builders</span></div>
+        <div class="stat"><b>900+</b><span>art presets</span></div>
+        <div class="stat"><b>60+</b><span>music styles</span></div>
+        <div class="stat"><b>40+</b><span>code systems</span></div>
+        <div class="stat"><b>12</b><span>theme locks</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── how it works ─────────────────────────────────────────────────── -->
+  <section class="section" id="how">
+    <div class="wrap">
+      <div class="section-head">
+        <div class="section-kicker">How it works</div>
+        <h2>Four steps, then paste</h2>
+      </div>
+      <span class="ink ink-divider" data-ink="divider" aria-hidden="true"></span>
+
+      <div class="steps">
+        <div class="step">
+          <h3>Lock your look</h3>
+          <p>Pick a theme — gothic castle, sunken kingdom, neon dystopia — or write your own world, palette and reference.</p>
+        </div>
+        <div class="step">
+          <h3>Pick what you need</h3>
+          <p>Choose a builder and a preset, then adjust the details. Every field maps to something the model actually responds to.</p>
+        </div>
+        <div class="step">
+          <h3>Generate</h3>
+          <p>PixelForge assembles the positive prompt, the negative prompt and — for animations and tilesets — a whole batch at once.</p>
+        </div>
+        <div class="step">
+          <h3>Paste anywhere</h3>
+          <p>Copy into your image, music or coding tool of choice. Save it to your library so the next asset matches this one.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── pricing ──────────────────────────────────────────────────────── -->
+  <section class="section" id="pricing">
+    <div class="wrap">
+      <div class="section-head">
+        <div class="section-kicker">Pricing</div>
+        <h2>Free to use. Free to upgrade, for now.</h2>
+        <p>Forge Master is the full studio. Payments are not switched on yet, so the upgrade currently costs nothing and asks for no card details.</p>
+      </div>
+
+      <div class="plans" id="plans"><!-- rendered by app.js --></div>
+      <p class="billing-note" id="billing-note"></p>
+    </div>
+  </section>
+
+  <!-- ── final CTA ────────────────────────────────────────────────────── -->
+  <section class="section" style="padding-top:0">
+    <div class="wrap">
+      <div class="cta-band">
+        <div class="cta-sprites" aria-hidden="true">
+          <img src="assets/img/sprite-knight.svg" alt="" class="px">
+          <img src="assets/img/sprite-mage.svg" alt="" class="px">
+          <img src="assets/img/sprite-slime.svg" alt="" class="px">
+        </div>
+        <h2>Your next asset is one click away</h2>
+        <p>No sign-up, no account, no connection required. Open the studio and start building.</p>
+        <div class="hero-cta">
+          <button class="btn btn-primary btn-lg" type="button" data-action="studio" data-mode="art">Open the studio</button>
+          <button class="btn btn-gold btn-lg" type="button" data-action="upgrade">Unlock Forge Master — $0</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <footer class="site-foot">
+    <div class="wrap">
+      <p>PixelForge — a local-first prompt studio for game developers. All artwork here is original and drawn for this project.</p>
+      <nav>
+        <a href="#features">Features</a>
+        <a href="#pricing">Pricing</a>
+        <a href="#" data-action="account">Account</a>
+      </nav>
+    </div>
+  </footer>
+</main>
+
+<!-- ══════════════════════════════════════════════════════════ STUDIO ══ -->
+<div class="studio" id="studio">
+  <div class="studio-bar">
+    <div class="wrap">
+      <div class="mode-rail" role="tablist" aria-label="Studio mode">
+        <button class="mode-btn on" type="button" data-mode="art" role="tab">
+          <img src="assets/img/sprite-knight.svg" alt="" class="px">Art Assets
+        </button>
+        <button class="mode-btn" type="button" data-mode="music" role="tab">
+          <img src="assets/img/sprite-banner.svg" alt="" class="px">Music
+        </button>
+        <button class="mode-btn" type="button" data-mode="code" role="tab">
+          <img src="assets/img/sprite-crystal.svg" alt="" class="px">Code
+        </button>
+        <button class="mode-btn" type="button" data-mode="library" role="tab">
+          <img src="assets/img/sprite-chest.svg" alt="" class="px">Library
+        </button>
+      </div>
+      <span class="spacer"></span>
+      <button class="btn btn-sm btn-gold" type="button" data-action="upgrade">Upgrade</button>
+    </div>
+  </div>
+
+  <div class="studio-body">
+    <div class="wrap">
+      <section class="mode-panel" data-mode="art"     role="tabpanel" aria-label="Art asset builder"></section>
+      <section class="mode-panel" data-mode="music"   role="tabpanel" aria-label="Music prompt builder" hidden></section>
+      <section class="mode-panel" data-mode="code"    role="tabpanel" aria-label="Code prompt builder" hidden></section>
+      <section class="mode-panel" data-mode="library" role="tabpanel" aria-label="Your saved prompts" hidden></section>
+    </div>
+  </div>
+</div>
+
+<div id="toast-host"></div>
+
+<!-- ═════════════════════════════════════════════════════════ SCRIPTS ══ -->
+<!-- Classic scripts, loaded in dependency order, so the app runs from file:// -->
+<script src="assets/js/core/util.js"></script>
+<script src="assets/js/core/store.js"></script>
+<script src="assets/js/core/premium.js"></script>
+<script src="assets/js/data/presets.js"></script>
+<script src="assets/js/data/fields.js"></script>
+<script src="assets/js/data/code-data.js"></script>
+<script src="assets/js/panels/art.js"></script>
+<script src="assets/js/panels/music.js"></script>
+<script src="assets/js/panels/code.js"></script>
+<script src="assets/js/panels/library.js"></script>
+<script src="assets/js/app.js"></script>
+</body>
+</html>
