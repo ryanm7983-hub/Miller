@@ -1,0 +1,687 @@
+// AuditReady — database schema
+//
+// Portability note: the development datasource is SQLite so the app runs with
+// zero infrastructure. SQLite in Prisma does not support native `enum` or
+// `Json` scalars, so enumerated columns are `String` (validated by the Zod +
+// TypeScript unions in `src/lib/enums.ts`) and structured payloads are stored
+// as JSON text (read/written through `src/lib/json.ts`).
+//
+// To move to PostgreSQL: change `provider` to "postgresql", point DATABASE_URL
+// at the server, and re-run `npx prisma migrate dev`. No application code
+// changes are required — see README "Switching to PostgreSQL".
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// ---------------------------------------------------------------------------
+// Identity
+// ---------------------------------------------------------------------------
+
+model User {
+  id           String    @id @default(cuid())
+  email        String    @unique
+  passwordHash String
+  name         String
+  jobTitle     String?
+  avatarSeed   String    @default("1")
+  isSuspended  Boolean   @default(false)
+  lastLoginAt  DateTime?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  sessions             Session[]
+  memberships          Membership[]
+  uploadedEvidence     Evidence[]        @relation("EvidenceUploader")
+  ownedEvidence        Evidence[]        @relation("EvidenceOwner")
+  ownedRequirements    ProjectRequirement[] @relation("RequirementOwner")
+  ownedGaps            Gap[]             @relation("GapOwner")
+  ownedActions         Action[]          @relation("ActionOwner")
+  createdActions       Action[]          @relation("ActionCreator")
+  verifiedActions      Action[]          @relation("ActionVerifier")
+  comments             Comment[]
+  notifications        Notification[]
+  auditLogs            AuditLog[]
+  reports              AuditReport[]
+  ledProjects          AuditProject[]    @relation("ProjectLead")
+  simulatorSessions    SimulatorSession[]
+  simulatorAnswers     SimulatorAnswer[]
+  evidenceDecisions    EvidenceLink[]    @relation("EvidenceLinkDecider")
+
+  @@index([email])
+}
+
+/// Server-side session records back the signed cookie so sessions can be
+/// revoked centrally (logout everywhere, suspension, password change).
+model Session {
+  id         String   @id @default(cuid())
+  userId     String
+  tokenHash  String   @unique
+  activeOrgId String?
+  ip         String?
+  userAgent  String?
+  expiresAt  DateTime
+  revokedAt  DateTime?
+  createdAt  DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expiresAt])
+}
+
+// ---------------------------------------------------------------------------
+// Tenancy
+// ---------------------------------------------------------------------------
+
+model Organization {
+  id          String   @id @default(cuid())
+  name        String
+  slug        String   @unique
+  /// OrgKind: STANDARD | CONSULTANCY
+  kind        String   @default("STANDARD")
+  industry    String?
+  sizeBand    String?
+  country     String?
+  logoColor   String   @default("kelp")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  memberships       Membership[]
+  invitations       Invitation[]
+  projects          AuditProject[]
+  evidence          Evidence[]
+  gaps              Gap[]
+  actions           Action[]
+  comments          Comment[]
+  notifications     Notification[]
+  reports           AuditReport[]
+  assessments       AiAssessment[]
+  auditLogs         AuditLog[]
+  subscription      Subscription?
+  customFrameworks  Framework[]
+  simulatorSessions SimulatorSession[]
+  departments       Department[]
+
+  /// Consultant mode: engagements where this org is the consultancy.
+  clientEngagements     ClientEngagement[] @relation("ConsultancyOrg")
+  /// Consultant mode: engagements where this org is the client.
+  consultantEngagements ClientEngagement[] @relation("ClientOrg")
+
+  @@index([kind])
+}
+
+model Membership {
+  id        String    @id @default(cuid())
+  userId    String
+  orgId     String
+  /// Role: OWNER | ADMIN | MANAGER | CONTRIBUTOR | VIEWER | CONSULTANT
+  role      String    @default("VIEWER")
+  /// MembershipStatus: ACTIVE | SUSPENDED
+  status    String    @default("ACTIVE")
+  department String?
+  createdAt DateTime  @default(now())
+
+  user User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  org  Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, orgId])
+  @@index([orgId])
+}
+
+model Invitation {
+  id        String   @id @default(cuid())
+  orgId     String
+  email     String
+  role      String   @default("CONTRIBUTOR")
+  tokenHash String   @unique
+  invitedBy String
+  expiresAt DateTime
+  acceptedAt DateTime?
+  createdAt DateTime @default(now())
+
+  org Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+
+  @@index([orgId])
+  @@index([email])
+}
+
+model Department {
+  id     String @id @default(cuid())
+  orgId  String
+  name   String
+
+  org Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+
+  @@unique([orgId, name])
+}
+
+/// Consultant mode scaffolding: a consultancy organization can be granted
+/// scoped access to client organizations. Enforced in `assertOrgAccess`.
+model ClientEngagement {
+  id             String   @id @default(cuid())
+  consultancyOrgId String
+  clientOrgId    String
+  /// EngagementStatus: PENDING | ACTIVE | ENDED
+  status         String   @default("ACTIVE")
+  /// Role granted to consultancy members inside the client org.
+  grantedRole    String   @default("MANAGER")
+  startedAt      DateTime @default(now())
+  endedAt        DateTime?
+
+  consultancy Organization @relation("ConsultancyOrg", fields: [consultancyOrgId], references: [id], onDelete: Cascade)
+  client      Organization @relation("ClientOrg", fields: [clientOrgId], references: [id], onDelete: Cascade)
+
+  @@unique([consultancyOrgId, clientOrgId])
+  @@index([clientOrgId])
+}
+
+// ---------------------------------------------------------------------------
+// Frameworks & requirements (generic — never framework-specific in code)
+// ---------------------------------------------------------------------------
+
+model Framework {
+  id          String   @id @default(cuid())
+  key         String   @unique
+  name        String
+  publisher   String?
+  category    String?
+  description String
+  /// System frameworks ship with the product; org-scoped ones are custom.
+  isSystem    Boolean  @default(true)
+  orgId       String?
+  createdAt   DateTime @default(now())
+
+  org      Organization?      @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  versions FrameworkVersion[]
+
+  @@index([orgId])
+}
+
+model FrameworkVersion {
+  id            String   @id @default(cuid())
+  frameworkId   String
+  version       String
+  effectiveDate DateTime?
+  notes         String?
+  isDefault     Boolean  @default(false)
+  createdAt     DateTime @default(now())
+
+  framework    Framework             @relation(fields: [frameworkId], references: [id], onDelete: Cascade)
+  categories   RequirementCategory[]
+  requirements Requirement[]
+  projects     AuditProject[]
+
+  @@unique([frameworkId, version])
+}
+
+model RequirementCategory {
+  id                 String @id @default(cuid())
+  frameworkVersionId String
+  code               String
+  name               String
+  description        String?
+  sortOrder          Int    @default(0)
+
+  frameworkVersion FrameworkVersion @relation(fields: [frameworkVersionId], references: [id], onDelete: Cascade)
+  requirements     Requirement[]
+
+  @@unique([frameworkVersionId, code])
+}
+
+model Requirement {
+  id                 String  @id @default(cuid())
+  frameworkVersionId String
+  categoryId         String?
+  identifier         String
+  title              String
+  text               String
+  guidance           String?
+  /// JSON array of suggested evidence types, e.g. ["training records", ...]
+  evidenceSuggestions String @default("[]")
+  /// 1 (informational) … 5 (critical). Drives readiness weighting + risk.
+  importance         Int     @default(3)
+  sortOrder          Int     @default(0)
+
+  frameworkVersion FrameworkVersion     @relation(fields: [frameworkVersionId], references: [id], onDelete: Cascade)
+  category         RequirementCategory? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  projectLinks     ProjectRequirement[]
+
+  @@unique([frameworkVersionId, identifier])
+  @@index([categoryId])
+}
+
+// ---------------------------------------------------------------------------
+// Audit projects
+// ---------------------------------------------------------------------------
+
+model AuditProject {
+  id                 String    @id @default(cuid())
+  orgId              String
+  name               String
+  frameworkVersionId String
+  /// AuditType: CERTIFICATION | SURVEILLANCE | INTERNAL | CUSTOMER | REGULATORY | GAP_ASSESSMENT
+  auditType          String    @default("INTERNAL")
+  scope              String?
+  auditDate          DateTime?
+  /// ProjectStatus: PLANNING | IN_PROGRESS | READY | ARCHIVED
+  status             String    @default("PLANNING")
+  leadUserId         String?
+  /// Cached readiness figures, refreshed by `recomputeProjectScores`.
+  readinessScore     Int       @default(0)
+  riskLevel          String    @default("MEDIUM")
+  scoredAt           DateTime?
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+
+  org              Organization         @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  frameworkVersion FrameworkVersion     @relation(fields: [frameworkVersionId], references: [id])
+  lead             User?                @relation("ProjectLead", fields: [leadUserId], references: [id], onDelete: SetNull)
+  requirements     ProjectRequirement[]
+  evidence         Evidence[]
+  gaps             Gap[]
+  actions          Action[]
+  reports          AuditReport[]
+  simulatorSessions SimulatorSession[]
+
+  @@index([orgId])
+  @@index([orgId, status])
+}
+
+/// Per-project state of a framework requirement. All requirement work happens
+/// here so the shared framework catalogue stays immutable across tenants.
+model ProjectRequirement {
+  id            String    @id @default(cuid())
+  orgId         String
+  projectId     String
+  requirementId String
+  /// RequirementStatus: NOT_ASSESSED | MISSING | NEEDS_REVIEW | PARTIALLY_SATISFIED | SATISFIED | NOT_APPLICABLE
+  status        String    @default("NOT_ASSESSED")
+  /// Set when a human accepts/overrides the AI-suggested status.
+  statusSource  String    @default("SYSTEM")
+  ownerUserId   String?
+  department    String?
+  notes         String?
+  importanceOverride Int?
+  naJustification String?
+  lastAssessedAt DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  project     AuditProject   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  requirement Requirement    @relation(fields: [requirementId], references: [id], onDelete: Cascade)
+  owner       User?          @relation("RequirementOwner", fields: [ownerUserId], references: [id], onDelete: SetNull)
+  links       EvidenceLink[]
+  gaps        Gap[]
+  simulatorQuestions SimulatorQuestion[]
+
+  @@unique([projectId, requirementId])
+  @@index([orgId])
+  @@index([projectId, status])
+}
+
+// ---------------------------------------------------------------------------
+// Evidence
+// ---------------------------------------------------------------------------
+
+model Evidence {
+  id            String    @id @default(cuid())
+  orgId         String
+  projectId     String?
+  title         String
+  filename      String
+  storageKey    String
+  mimeType      String
+  sizeBytes     Int
+  checksum      String
+  /// DocumentType — AI-suggested, human-editable. Free text with a suggested set.
+  documentType  String    @default("other")
+  ownerUserId   String?
+  department    String?
+  revision      String?
+  effectiveDate DateTime?
+  expiresAt     DateTime?
+  /// EvidenceStatus: PENDING_REVIEW | ACCEPTED | REJECTED | SUPERSEDED | EXPIRED
+  status        String    @default("PENDING_REVIEW")
+  /// JSON array of tag strings.
+  tags          String    @default("[]")
+  notes         String?
+  extractedText String?
+  /// ExtractionStatus: PENDING | PROCESSING | COMPLETE | PARTIAL | FAILED | UNSUPPORTED
+  extractionStatus String @default("PENDING")
+  extractionNote   String?
+  ocrUsed       Boolean   @default(false)
+  pageCount     Int?
+  /// AnalysisStatus: NOT_ANALYZED | QUEUED | ANALYZING | COMPLETE | FAILED
+  analysisStatus String   @default("NOT_ANALYZED")
+  analyzedAt    DateTime?
+  uploadedById  String
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  org        Organization  @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  project    AuditProject? @relation(fields: [projectId], references: [id], onDelete: SetNull)
+  owner      User?         @relation("EvidenceOwner", fields: [ownerUserId], references: [id], onDelete: SetNull)
+  uploadedBy User          @relation("EvidenceUploader", fields: [uploadedById], references: [id])
+  links      EvidenceLink[]
+  gaps       Gap[]
+  actionAttachments ActionAttachment[]
+
+  @@index([orgId])
+  @@index([orgId, status])
+  @@index([projectId])
+}
+
+/// Evidence ↔ requirement association. Rows created by AI start as PENDING and
+/// only count toward readiness once a human approves them (configurable).
+model EvidenceLink {
+  id                   String   @id @default(cuid())
+  orgId                String
+  evidenceId           String
+  projectRequirementId String
+  /// LinkSource: AI | HUMAN
+  source               String   @default("AI")
+  /// 0…1 — how relevant the evidence appears to the requirement.
+  relevance            Float    @default(0)
+  /// 0…1 — model confidence in its own relevance judgement.
+  confidence           Float    @default(0)
+  /// AiStrength: STRONG | PARTIAL | WEAK
+  strength             String   @default("PARTIAL")
+  rationale            String?
+  concerns             String   @default("[]")
+  /// ReviewState: PENDING | APPROVED | REJECTED
+  reviewState          String   @default("PENDING")
+  decidedById          String?
+  decidedAt            DateTime?
+  createdAt            DateTime @default(now())
+
+  evidence           Evidence           @relation(fields: [evidenceId], references: [id], onDelete: Cascade)
+  projectRequirement ProjectRequirement @relation(fields: [projectRequirementId], references: [id], onDelete: Cascade)
+  decidedBy          User?              @relation("EvidenceLinkDecider", fields: [decidedById], references: [id], onDelete: SetNull)
+
+  @@unique([evidenceId, projectRequirementId])
+  @@index([orgId])
+  @@index([projectRequirementId])
+}
+
+// ---------------------------------------------------------------------------
+// AI provenance — every model conclusion is retained and attributable
+// ---------------------------------------------------------------------------
+
+model AiAssessment {
+  id            String   @id @default(cuid())
+  orgId         String
+  /// SubjectType: EVIDENCE | PROJECT_REQUIREMENT | SIMULATOR_ANSWER | GAP
+  subjectType   String
+  subjectId     String
+  /// AssessmentKind: DOCUMENT_ANALYSIS | REQUIREMENT_ASSESSMENT | ACTION_SUGGESTION | SIMULATOR_QUESTIONS | SIMULATOR_EVALUATION
+  kind          String
+  provider      String
+  model         String
+  promptVersion String
+  inputHash     String
+  /// Structured model output as JSON text.
+  output        String
+  summary       String?
+  confidence    Float?
+  latencyMs     Int?
+  /// AssessmentStatus: ACTIVE | SUPERSEDED | OVERRIDDEN
+  status        String   @default("ACTIVE")
+  overrideNote  String?
+  createdAt     DateTime @default(now())
+
+  org Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+
+  @@index([orgId])
+  @@index([subjectType, subjectId])
+}
+
+// ---------------------------------------------------------------------------
+// Gaps & actions
+// ---------------------------------------------------------------------------
+
+model Gap {
+  id                   String    @id @default(cuid())
+  orgId                String
+  projectId            String
+  projectRequirementId String?
+  evidenceId           String?
+  /// GapType: see GAP_TYPES in src/lib/enums.ts
+  type                 String
+  /// Severity: CRITICAL | HIGH | MEDIUM | LOW
+  severity             String    @default("MEDIUM")
+  title                String
+  description          String
+  recommendation       String?
+  /// DetectedBy: SYSTEM | AI | HUMAN
+  detectedBy           String    @default("SYSTEM")
+  /// GapStatus: OPEN | IN_PROGRESS | RESOLVED | ACCEPTED_RISK | DISMISSED
+  status               String    @default("OPEN")
+  department           String?
+  ownerUserId          String?
+  dueDate              DateTime?
+  /// Stable key used to de-duplicate re-detection runs.
+  fingerprint          String
+  resolvedAt           DateTime?
+  createdAt            DateTime  @default(now())
+  updatedAt            DateTime  @updatedAt
+
+  org                Organization        @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  project            AuditProject        @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  projectRequirement ProjectRequirement? @relation(fields: [projectRequirementId], references: [id], onDelete: Cascade)
+  evidence           Evidence?           @relation(fields: [evidenceId], references: [id], onDelete: Cascade)
+  owner              User?               @relation("GapOwner", fields: [ownerUserId], references: [id], onDelete: SetNull)
+  actions            Action[]
+
+  @@unique([projectId, fingerprint])
+  @@index([orgId])
+  @@index([projectId, status])
+}
+
+model Action {
+  id          String    @id @default(cuid())
+  orgId       String
+  projectId   String
+  gapId       String?
+  reference   String
+  title       String
+  description String?
+  ownerUserId String?
+  department  String?
+  dueDate     DateTime?
+  /// Priority: CRITICAL | HIGH | MEDIUM | LOW
+  priority    String    @default("MEDIUM")
+  /// ActionStatus: OPEN | IN_PROGRESS | BLOCKED | COMPLETE | VERIFIED
+  status      String    @default("OPEN")
+  /// ActionSource: HUMAN | AI
+  source      String    @default("HUMAN")
+  createdById String
+  completedAt DateTime?
+  verifiedById String?
+  verifiedAt  DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  org        Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  project    AuditProject @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  gap        Gap?         @relation(fields: [gapId], references: [id], onDelete: SetNull)
+  owner      User?        @relation("ActionOwner", fields: [ownerUserId], references: [id], onDelete: SetNull)
+  createdBy  User         @relation("ActionCreator", fields: [createdById], references: [id])
+  verifiedBy User?        @relation("ActionVerifier", fields: [verifiedById], references: [id], onDelete: SetNull)
+  attachments ActionAttachment[]
+
+  @@index([orgId])
+  @@index([projectId, status])
+  @@index([ownerUserId, status])
+}
+
+model ActionAttachment {
+  id         String   @id @default(cuid())
+  actionId   String
+  evidenceId String
+  createdAt  DateTime @default(now())
+
+  action   Action   @relation(fields: [actionId], references: [id], onDelete: Cascade)
+  evidence Evidence @relation(fields: [evidenceId], references: [id], onDelete: Cascade)
+
+  @@unique([actionId, evidenceId])
+}
+
+model Comment {
+  id         String   @id @default(cuid())
+  orgId      String
+  /// EntityType: ACTION | GAP | EVIDENCE | PROJECT_REQUIREMENT
+  entityType String
+  entityId   String
+  userId     String
+  body       String
+  createdAt  DateTime @default(now())
+
+  org  Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  user User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([orgId])
+  @@index([entityType, entityId])
+}
+
+// ---------------------------------------------------------------------------
+// Notifications, billing, reporting, audit trail
+// ---------------------------------------------------------------------------
+
+model Notification {
+  id        String    @id @default(cuid())
+  orgId     String
+  userId    String
+  /// NotificationType: see NOTIFICATION_TYPES in src/lib/enums.ts
+  type      String
+  title     String
+  body      String?
+  link      String?
+  readAt    DateTime?
+  emailedAt DateTime?
+  createdAt DateTime  @default(now())
+
+  org  Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  user User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, readAt])
+  @@index([orgId])
+}
+
+model Subscription {
+  id                   String    @id @default(cuid())
+  orgId                String    @unique
+  planKey              String    @default("trial")
+  /// BillingStatus: TRIALING | ACTIVE | PAST_DUE | CANCELED | EXPIRED
+  status               String    @default("TRIALING")
+  provider             String    @default("simulator")
+  providerCustomerId   String?
+  providerSubscriptionId String?
+  seats                Int       @default(3)
+  trialEndsAt          DateTime?
+  currentPeriodEnd     DateTime?
+  cancelAtPeriodEnd    Boolean   @default(false)
+  createdAt            DateTime  @default(now())
+  updatedAt            DateTime  @updatedAt
+
+  org Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+}
+
+model AuditReport {
+  id             String   @id @default(cuid())
+  orgId          String
+  projectId      String
+  title          String
+  generatedById  String
+  readinessScore Int
+  riskLevel      String
+  /// Full report payload (snapshot) as JSON text — reports are immutable.
+  data           String
+  createdAt      DateTime @default(now())
+
+  org         Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  project     AuditProject @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  generatedBy User         @relation(fields: [generatedById], references: [id])
+
+  @@index([orgId])
+  @@index([projectId])
+}
+
+model AuditLog {
+  id         String   @id @default(cuid())
+  orgId      String?
+  userId     String?
+  action     String
+  entityType String?
+  entityId   String?
+  ip         String?
+  userAgent  String?
+  metadata   String   @default("{}")
+  createdAt  DateTime @default(now())
+
+  org  Organization? @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  user User?         @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([orgId, createdAt])
+  @@index([entityType, entityId])
+}
+
+// ---------------------------------------------------------------------------
+// Audit simulator ("Ask Me Like an Auditor")
+// ---------------------------------------------------------------------------
+
+model SimulatorSession {
+  id          String   @id @default(cuid())
+  orgId       String
+  projectId   String
+  title       String
+  /// SimulatorStatus: ACTIVE | COMPLETE
+  status      String   @default("ACTIVE")
+  createdById String
+  createdAt   DateTime @default(now())
+
+  org       Organization        @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  project   AuditProject        @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  createdBy User                @relation(fields: [createdById], references: [id])
+  questions SimulatorQuestion[]
+
+  @@index([orgId])
+  @@index([projectId])
+}
+
+model SimulatorQuestion {
+  id                   String  @id @default(cuid())
+  sessionId            String
+  projectRequirementId String?
+  question             String
+  focus                String?
+  sortOrder            Int     @default(0)
+
+  session            SimulatorSession    @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  projectRequirement ProjectRequirement? @relation(fields: [projectRequirementId], references: [id], onDelete: SetNull)
+  answers            SimulatorAnswer[]
+
+  @@index([sessionId])
+}
+
+model SimulatorAnswer {
+  id         String   @id @default(cuid())
+  questionId String
+  userId     String
+  answer     String
+  /// 0…100 response-readiness score.
+  score      Int      @default(0)
+  /// JSON evaluation payload (strengths, gaps, suggested evidence).
+  evaluation String   @default("{}")
+  createdAt  DateTime @default(now())
+
+  question SimulatorQuestion @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  user     User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([questionId])
+}

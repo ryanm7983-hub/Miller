@@ -1,0 +1,141 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --font-sans: ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    --font-mono: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, monospace;
+  }
+
+  * {
+    @apply border-ink-200;
+  }
+
+  html {
+    -webkit-text-size-adjust: 100%;
+    scroll-behavior: smooth;
+  }
+
+  body {
+    @apply bg-white text-ink-800 antialiased;
+    font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
+    text-rendering: optimizeLegibility;
+  }
+
+  h1, h2, h3, h4 {
+    @apply text-ink-900;
+    letter-spacing: -0.018em;
+  }
+
+  ::selection {
+    @apply bg-kelp-100 text-kelp-900;
+  }
+
+  :focus-visible {
+    @apply outline-none ring-2 ring-kelp-500/60 ring-offset-2 ring-offset-white;
+  }
+
+  /* Tabular figures wherever numbers are compared vertically. */
+  .tnum {
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+@layer components {
+  .container-page {
+    @apply mx-auto w-full max-w-[1180px] px-5 sm:px-8;
+  }
+
+  .card {
+    @apply rounded-xl border border-ink-200 bg-white shadow-xs;
+  }
+
+  .card-hover {
+    @apply transition-all duration-150 hover:border-ink-300 hover:shadow-md;
+  }
+
+  .label {
+    @apply text-[13px] font-medium text-ink-700;
+  }
+
+  .hint {
+    @apply text-[12.5px] leading-relaxed text-ink-500;
+  }
+
+  .input {
+    @apply w-full rounded-lg border border-ink-300 bg-white px-3 py-2 text-[14px] text-ink-900
+           placeholder:text-ink-400 transition-colors
+           focus:border-kelp-500 focus:outline-none focus:ring-2 focus:ring-kelp-500/20
+           disabled:cursor-not-allowed disabled:bg-ink-50 disabled:text-ink-500;
+  }
+
+  .select {
+    @apply input appearance-none bg-[length:16px] bg-[right_10px_center] bg-no-repeat pr-9;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%236B7788' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  }
+
+  .textarea {
+    @apply input min-h-[96px] resize-y leading-relaxed;
+  }
+
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 rounded-lg text-[14px] font-semibold
+           transition-all duration-150 disabled:pointer-events-none disabled:opacity-50;
+  }
+
+  .btn-md { @apply h-10 px-4; }
+  .btn-sm { @apply h-8 px-3 text-[13px]; }
+  .btn-lg { @apply h-11 px-5 text-[15px]; }
+
+  .btn-primary {
+    @apply btn bg-kelp-700 text-white shadow-xs hover:bg-kelp-800 active:bg-kelp-900;
+  }
+
+  .btn-secondary {
+    @apply btn border border-ink-300 bg-white text-ink-800 shadow-xs hover:border-ink-400 hover:bg-ink-50;
+  }
+
+  .btn-ghost {
+    @apply btn text-ink-600 hover:bg-ink-100 hover:text-ink-900;
+  }
+
+  .btn-danger {
+    @apply btn bg-risk-600 text-white shadow-xs hover:bg-risk-700;
+  }
+
+  .link {
+    @apply text-kelp-700 underline decoration-kelp-700/30 underline-offset-2 transition-colors hover:decoration-kelp-700;
+  }
+
+  .table-row-link {
+    @apply cursor-pointer transition-colors hover:bg-ink-50/70;
+  }
+
+  .prose-report h2 { @apply mb-3 mt-8 text-[15px] font-bold uppercase tracking-wide text-ink-500; }
+  .prose-report p { @apply mb-3 leading-relaxed text-ink-700; }
+}
+
+@layer utilities {
+  .grid-backdrop {
+    background-image:
+      linear-gradient(to right, rgba(11, 16, 23, 0.045) 1px, transparent 1px),
+      linear-gradient(to bottom, rgba(11, 16, 23, 0.045) 1px, transparent 1px);
+    background-size: 56px 56px;
+  }
+
+  .radial-fade {
+    mask-image: radial-gradient(ellipse 75% 60% at 50% 0%, #000 45%, transparent 100%);
+  }
+
+  .no-scrollbar::-webkit-scrollbar { display: none; }
+  .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+}
+
+@media print {
+  .print\:hidden { display: none !important; }
+  body { background: #fff; }
+  .card { border-color: #d5dae1 !important; box-shadow: none !important; break-inside: avoid; }
+  a { text-decoration: none !important; color: inherit !important; }
+  @page { margin: 16mm; }
+}
